@@ -723,66 +723,24 @@ tr:hover {
 @media (max-width: 768px) {
   .memory-cards-grid {
     grid-template-columns: 1fr;
-    gap: 15px;
-    padding: 10px;
-  }
-
-  .memory-card {
-    padding: 10px;
-  }
-
-  .memory-condition {
-    font-size: 0.9rem;
-    margin: -10px -10px 8px -10px;
-    padding: 8px 10px;
-  }
-
-  .memory-item {
-    font-size: 0.75rem;
-  }
-
-  .memory-item-left {
-    font-size: 0.7rem;
-    max-width: 40%;
-  }
-
-  .memory-item-right {
-    font-size: 0.7rem;
-    max-width: 40%;
-  }
-
-  .memory-item-dots::after {
-    content: "..........";
-    letter-spacing: 1px;
-  }
-
-  .memory-input {
-    font-size: 0.65rem;
-    padding: 2px 4px;
-    min-width: 60px;
-    max-width: 40%;
-  }
-}
-
-@media (max-width: 480px) {
-  .memory-cards-grid {
+    gap: 12px;
     padding: 8px;
-    gap: 10px;
   }
 
   .memory-card {
     padding: 8px;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .memory-condition {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     margin: -8px -8px 6px -8px;
     padding: 6px 8px;
   }
 
   .memory-item {
     font-size: 0.7rem;
-    padding: 4px 0;
   }
 
   .memory-item-left {
@@ -795,15 +753,69 @@ tr:hover {
     max-width: 35%;
   }
 
+  .memory-item-dots {
+    margin: 0 4px;
+    max-width: 30%;
+    min-width: 10px;
+  }
+
   .memory-item-dots::after {
-    content: "......";
-    letter-spacing: 0.5px;
+    background-size: 5px 5px;
   }
 
   .memory-input {
     font-size: 0.6rem;
     padding: 2px 3px;
-    min-width: 50px;
+    min-width: 40px;
     max-width: 35%;
+  }
+}
+
+@media (max-width: 480px) {
+  .memory-cards-grid {
+    padding: 6px;
+    gap: 8px;
+  }
+
+  .memory-card {
+    padding: 6px;
+  }
+
+  .memory-condition {
+    font-size: 0.75rem;
+    margin: -6px -6px 4px -6px;
+    padding: 4px 6px;
+  }
+
+  .memory-item {
+    font-size: 0.65rem;
+    padding: 3px 0;
+  }
+
+  .memory-item-left {
+    font-size: 0.6rem;
+    max-width: 32%;
+  }
+
+  .memory-item-right {
+    font-size: 0.6rem;
+    max-width: 32%;
+  }
+
+  .memory-item-dots {
+    margin: 0 3px;
+    max-width: 36%;
+    min-width: 8px;
+  }
+
+  .memory-item-dots::after {
+    background-size: 4px 4px;
+  }
+
+  .memory-input {
+    font-size: 0.55rem;
+    padding: 1px 2px;
+    min-width: 35px;
+    max-width: 32%;
   }
 }
