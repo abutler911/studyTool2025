@@ -1,76 +1,179 @@
-const limitationsData = [
-  {
-    system: "Engine",
-    type: "Maximum RPM",
-    value: "2700",
-    unit: "RPM",
-    notes: "Continuous operation",
+const limitationsCategories = {
+  "Structural Limitations": {
+    columns: ["Structure", "ERJ175LL", "ERJ175LR"],
+    data: [
+      {
+        structure: "Maximum Takeoff Weight",
+        erj175ll: "38,800 lbs",
+        erj175lr: "40,500 lbs",
+      },
+      {
+        structure: "Maximum Landing Weight",
+        erj175ll: "35,000 lbs",
+        erj175lr: "35,000 lbs",
+      },
+      {
+        structure: "Maximum Zero Fuel Weight",
+        erj175ll: "33,000 lbs",
+        erj175lr: "33,000 lbs",
+      },
+      {
+        structure: "Maximum Ramp Weight",
+        erj175ll: "39,000 lbs",
+        erj175lr: "40,700 lbs",
+      },
+      {
+        structure: "Maximum Fuel Capacity",
+        erj175ll: "2,590 gal",
+        erj175lr: "2,590 gal",
+      },
+    ],
   },
-  {
-    system: "Engine",
-    type: "Oil Temperature",
-    value: "245",
-    unit: "°F",
-    notes: "Maximum",
+  "Structural Dimensions": {
+    columns: ["Structure", "Dimension"],
+    data: [
+      { structure: "Overall Length", dimension: "103 ft 11 in" },
+      { structure: "Wing Span", dimension: "85 ft 2 in" },
+      { structure: "Overall Height", dimension: "31 ft 1 in" },
+      { structure: "Cabin Length", dimension: "68 ft 4 in" },
+      { structure: "Cabin Width", dimension: "8 ft 2 in" },
+    ],
   },
-  {
-    system: "Engine",
-    type: "Oil Pressure",
-    value: "25-65",
-    unit: "PSI",
-    notes: "Normal operating range",
+  "Max Altitude and Temp Limits": {
+    columns: ["Limitation", "Value"],
+    data: [
+      { limitation: "Maximum Operating Altitude", value: "41,000 ft" },
+      { limitation: "Maximum Takeoff Altitude", value: "8,000 ft" },
+      { limitation: "Maximum Landing Altitude", value: "8,000 ft" },
+      { limitation: "Maximum Operating Temperature", value: "ISA +35°C" },
+      { limitation: "Minimum Operating Temperature", value: "-54°C" },
+    ],
   },
-  {
-    system: "Electrical",
-    type: "Battery Voltage",
-    value: "24",
-    unit: "V",
-    notes: "Nominal",
+  "Airspeed and Mach Limits": {
+    columns: ["Speed", "Limit"],
+    data: [
+      { speed: "VMO (Maximum Operating Speed)", limit: "320 KIAS" },
+      { speed: "MMO (Maximum Operating Mach)", limit: "0.78 Mach" },
+      { speed: "VNE (Never Exceed Speed)", limit: "350 KIAS" },
+      { speed: "VA (Design Maneuvering Speed)", limit: "250 KIAS" },
+      { speed: "VFE (Flaps Extended Speed)", limit: "200 KIAS" },
+    ],
   },
-  {
-    system: "Electrical",
-    type: "Alternator Output",
-    value: "60",
-    unit: "A",
-    notes: "Maximum",
+  "Max Flap Operating Speed": {
+    columns: ["Flap", "Speed"],
+    data: [
+      { flap: "Flaps 1", speed: "230 KIAS" },
+      { flap: "Flaps 2", speed: "215 KIAS" },
+      { flap: "Flaps 3", speed: "200 KIAS" },
+      { flap: "Flaps 4", speed: "180 KIAS" },
+      { flap: "Flaps 5 (Full)", speed: "160 KIAS" },
+    ],
   },
-  {
-    system: "Flight Controls",
-    type: "Never Exceed Speed",
-    value: "200",
-    unit: "KIAS",
-    notes: "VNE - Red line",
+  "Starter Cranking Limits on Ground": {
+    columns: ["Start Attempts", "Time ON", "Time OFF"],
+    data: [
+      {
+        start_attempts: "1st Attempt",
+        time_on: "90 seconds",
+        time_off: "10 seconds",
+      },
+      {
+        start_attempts: "2nd Attempt",
+        time_on: "90 seconds",
+        time_off: "10 seconds",
+      },
+      {
+        start_attempts: "3rd Attempt",
+        time_on: "90 seconds",
+        time_off: "30 minutes",
+      },
+      {
+        start_attempts: "4th Attempt",
+        time_on: "90 seconds",
+        time_off: "30 minutes",
+      },
+    ],
   },
-  {
-    system: "Flight Controls",
-    type: "Maneuvering Speed",
-    value: "135",
-    unit: "KIAS",
-    notes: "VA at max weight",
+  "Starter Cranking Limits in Flight": {
+    columns: ["Start Attempts", "Time ON", "Time OFF"],
+    data: [
+      {
+        start_attempts: "1st Attempt",
+        time_on: "30 seconds",
+        time_off: "10 seconds",
+      },
+      {
+        start_attempts: "2nd Attempt",
+        time_on: "30 seconds",
+        time_off: "10 seconds",
+      },
+      {
+        start_attempts: "3rd Attempt",
+        time_on: "30 seconds",
+        time_off: "30 minutes",
+      },
+    ],
   },
-  {
-    system: "Landing Gear",
-    type: "Extension Speed",
-    value: "140",
-    unit: "KIAS",
-    notes: "VLE - Maximum",
+  "Dry Motoring Cycle Limits": {
+    columns: ["Motoring Attempts", "Time ON", "Time OFF"],
+    data: [
+      {
+        motoring_attempts: "1st Cycle",
+        time_on: "90 seconds",
+        time_off: "5 minutes",
+      },
+      {
+        motoring_attempts: "2nd Cycle",
+        time_on: "90 seconds",
+        time_off: "5 minutes",
+      },
+      {
+        motoring_attempts: "3rd Cycle",
+        time_on: "90 seconds",
+        time_off: "30 minutes",
+      },
+    ],
   },
-  {
-    system: "Flaps",
-    type: "Operating Speed",
-    value: "110",
-    unit: "KIAS",
-    notes: "VFE - Full flaps",
+  "APU Starter Duty Cycle": {
+    columns: ["Attempt", "Time OFF"],
+    data: [
+      { attempt: "1st Attempt", time_off: "60 seconds" },
+      { attempt: "2nd Attempt", time_off: "60 seconds" },
+      { attempt: "3rd Attempt", time_off: "60 seconds" },
+      { attempt: "After 3 Attempts", time_off: "15 minutes" },
+    ],
   },
-  {
-    system: "Weight & Balance",
-    type: "Maximum Weight",
-    value: "3400",
-    unit: "lbs",
-    notes: "MTOW",
+  "APU Operational Limits to Start": {
+    columns: ["Condition", "Min", "Max"],
+    data: [
+      { condition: "Altitude", min: "0 ft", max: "20,000 ft" },
+      { condition: "Temperature", min: "-54°C", max: "ISA +35°C" },
+      { condition: "Wind Speed", min: "0 kts", max: "40 kts" },
+      { condition: "Battery Voltage", min: "22V", max: "30V" },
+    ],
   },
-];
+  "APU Operational Limits for Cont Operation": {
+    columns: ["Condition", "Min", "Max"],
+    data: [
+      { condition: "Altitude", min: "0 ft", max: "41,000 ft" },
+      { condition: "EGT", min: "0°C", max: "677°C" },
+      { condition: "Oil Temperature", min: "-40°C", max: "163°C" },
+      { condition: "Oil Pressure", min: "13 PSI", max: "58 PSI" },
+    ],
+  },
+  Pressurization: {
+    columns: ["Condition", "Limits"],
+    data: [
+      { condition: "Maximum Cabin Altitude", limits: "8,000 ft" },
+      { condition: "Maximum Differential Pressure", limits: "8.6 PSI" },
+      { condition: "Maximum Rate of Climb", limits: "500 fpm" },
+      { condition: "Maximum Rate of Descent", limits: "300 fpm" },
+      { condition: "Safety Relief Valve", limits: "8.8 PSI" },
+    ],
+  },
+};
 
+let currentCategory = "Structural Limitations";
 let currentMode = "study";
 let correctCount = 0;
 let incorrectCount = 0;
@@ -83,6 +186,7 @@ let savedProgress = {
   incorrectCount: 0,
   streakCount: 0,
   mode: "study",
+  category: "Structural Limitations",
 };
 
 function init() {
@@ -91,23 +195,50 @@ function init() {
   loadProgress();
 }
 
+function changeCategory() {
+  currentCategory = document.getElementById("category-select").value;
+  populateTable();
+  resetProgress();
+}
+
 function populateTable() {
+  const category = limitationsCategories[currentCategory];
+  const thead = document.getElementById("table-head");
   const tbody = document.getElementById("table-body");
+
+  thead.innerHTML = "";
   tbody.innerHTML = "";
 
-  limitationsData.forEach((item, index) => {
+  const headerRow = document.createElement("tr");
+  category.columns.forEach((column) => {
+    const th = document.createElement("th");
+    th.textContent = column;
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+
+  category.data.forEach((item, index) => {
     const row = document.createElement("tr");
-    row.innerHTML = `
-            <td>${item.system}</td>
-            <td>${item.type}</td>
-            <td class="limitation-cell" data-index="${index}" data-field="value" onclick="handleCellClick(this)">
-                ${currentMode === "study" ? item.value : ""}
-            </td>
-            <td class="limitation-cell" data-index="${index}" data-field="unit" onclick="handleCellClick(this)">
-                ${currentMode === "study" ? item.unit : ""}
-            </td>
-            <td>${item.notes}</td>
-        `;
+    const keys = Object.keys(item);
+
+    keys.forEach((key, colIndex) => {
+      const cell = document.createElement("td");
+
+      if (
+        colIndex === keys.length - 1 ||
+        (keys.length === 2 && colIndex === 1)
+      ) {
+        cell.className = "limitation-cell";
+        cell.setAttribute("data-index", index);
+        cell.setAttribute("data-field", key);
+        cell.onclick = () => handleCellClick(cell);
+        cell.textContent = currentMode === "study" ? item[key] : "";
+      } else {
+        cell.textContent = item[key];
+      }
+
+      row.appendChild(cell);
+    });
     tbody.appendChild(row);
   });
 
@@ -123,7 +254,8 @@ function handleCellClick(cell) {
 
   const index = parseInt(cell.getAttribute("data-index"));
   const field = cell.getAttribute("data-field");
-  const correctValue = limitationsData[index][field];
+  const category = limitationsCategories[currentCategory];
+  const correctValue = category.data[index][field];
 
   if (cell.classList.contains("hidden")) {
     cell.textContent = correctValue;
@@ -148,7 +280,7 @@ function hideRandomCells() {
 
 function createFillInMode() {
   const cells = document.querySelectorAll(".limitation-cell");
-  cells.forEach((cell, index) => {
+  cells.forEach((cell, cellIndex) => {
     const dataIndex = cell.getAttribute("data-index");
     const field = cell.getAttribute("data-field");
     const input = document.createElement("input");
@@ -169,7 +301,8 @@ function createFillInMode() {
 }
 
 function checkFillInAnswer(input, dataIndex, field) {
-  const correctValue = limitationsData[dataIndex][field].toLowerCase();
+  const category = limitationsCategories[currentCategory];
+  const correctValue = category.data[dataIndex][field].toLowerCase();
   const userValue = input.value.toLowerCase().trim();
 
   if (userValue === correctValue) {
@@ -259,6 +392,7 @@ function saveProgress() {
     incorrectCount,
     streakCount,
     mode: currentMode,
+    category: currentCategory,
   };
 }
 
@@ -267,6 +401,8 @@ function loadProgress() {
     correctCount = savedProgress.correctCount || 0;
     incorrectCount = savedProgress.incorrectCount || 0;
     streakCount = savedProgress.streakCount || 0;
+    currentCategory = savedProgress.category || "Structural Limitations";
+    document.getElementById("category-select").value = currentCategory;
     updateStats();
   }
 }
