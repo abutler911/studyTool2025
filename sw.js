@@ -1,10 +1,10 @@
 const CACHE_NAME = "aircraft-limitations-v1";
 const urlsToCache = [
-  "/",
-  "/index.html",
-  "/styles.css",
-  "/script.js",
-  "/manifest.json",
+  "./",
+  "./index.html",
+  "./styles.css",
+  "./script.js",
+  "./manifest.json",
   "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap",
 ];
 
