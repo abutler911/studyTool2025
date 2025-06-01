@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aircraft Limitations Study Tool</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>✈️ Aircraft Limitations Study Tool</h1>
+        <p>Master your aircraft limitations with interactive study modes</p>
+      </div>
+      <div class="controls">
+        <button class="btn active" onclick="setMode('study')">
+          📚 Study Mode
+        </button>
+        <button class="btn" onclick="setMode('quiz')">🧠 Quiz Mode</button>
+        <button class="btn" onclick="setMode('fill')">✏️ Fill-in Mode</button>
+        <button class="btn" onclick="setMode('timer')">
+          ⏱️ Timer Challenge
+        </button>
+        <button class="btn" onclick="resetProgress()">🔄 Reset</button>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value" id="correct-count">0</div>
+          <div class="stat-label">Correct</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="incorrect-count">0</div>
+          <div class="stat-label">Incorrect</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="streak-count">0</div>
+          <div class="stat-label">Streak</div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="timer" id="timer" style="display: none">Time: 05:00</div>
+      <div class="table-container">
+        <table id="limitations-table">
+          <thead>
+            <tr>
+              <th>System/Component</th>
+              <th>Limitation Type</th>
+              <th>Value</th>
+              <th>Unit</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
