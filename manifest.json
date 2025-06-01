@@ -2,7 +2,7 @@
   "name": "Aircraft Limitations Study Tool",
   "short_name": "AircraftLimits",
   "description": "Master your aircraft limitations with interactive study modes",
-  "start_url": "/studyTool2025/",
+  "start_url": "https://abutler911.github.io/studyTool2025/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#00ff41",
