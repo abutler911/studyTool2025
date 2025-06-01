@@ -173,6 +173,67 @@ const limitationsCategories = {
       },
     ],
   },
+  "Memory Items": {
+    columns: ["cards"],
+    data: [
+      {
+        condition: "Smoke Evacuation",
+        items: [
+          "Oxygen Masks ....... Don, Emer",
+          "Crew Communication ....... Establish",
+          "Pressurization Dump ....... Push In",
+        ],
+      },
+      {
+        condition: "Smoke/Fire/Fumes",
+        items: [
+          "Oxygen Masks ....... Don, 100%",
+          "Crew Communication ....... Establish",
+        ],
+      },
+      {
+        condition: "Cabin Altitude Hi",
+        items: [
+          "Oxygen Masks ....... Don, 100%",
+          "Crew Communication ....... Establish",
+        ],
+      },
+      {
+        condition: "Jammed Control Column - Pitch",
+        items: ["Elevator Disconnect Handle ....... Pull"],
+      },
+      {
+        condition: "Jammed Control Column - Roll",
+        items: ["Aileron Disconnect Handle ....... Pull"],
+      },
+      {
+        condition: "Pitch Trim Runaway",
+        items: [
+          "AP / Trim Disc Button ....... Press and Hold",
+          "Pitch Trim Sys 1 & 2 Cutout Buttons ....... Push In",
+        ],
+      },
+      {
+        condition: "Roll or Yaw Trim Runaway",
+        items: ["AP / Trim Disc Button ....... Press and Hold"],
+      },
+      {
+        condition: "Sterring Runaway",
+        items: [
+          "Steer Disc Switch ....... Press",
+          "Steer the airplane using differential braking and rudder",
+        ],
+      },
+      {
+        condition: "Batt 1 (2) Overtemp",
+        items: ["Associated Battery ....... Off"],
+      },
+      {
+        condition: "Engine Abnormal Start",
+        items: ["Affected Engine Start/Stop Selector ....... Stop"],
+      },
+    ],
+  },
 };
 
 let currentCategory = "Structural Limitations";
@@ -210,6 +271,11 @@ function populateTable() {
 
   thead.innerHTML = "";
   tbody.innerHTML = "";
+
+  if (currentCategory === "Memory Items") {
+    populateMemoryItems();
+    return;
+  }
 
   const headerRow = document.createElement("tr");
   category.columns.forEach((column) => {
@@ -249,6 +315,140 @@ function populateTable() {
   } else if (currentMode === "fill") {
     createFillInMode();
   }
+}
+
+function populateMemoryItems() {
+  const category = limitationsCategories[currentCategory];
+  const container = document.querySelector(".table-container");
+
+  container.innerHTML = "";
+
+  const cardsGrid = document.createElement("div");
+  cardsGrid.className = "memory-cards-grid";
+
+  category.data.forEach((item, index) => {
+    const card = document.createElement("div");
+    card.className = "memory-card";
+
+    const condition = document.createElement("div");
+    condition.className = "memory-condition";
+    condition.textContent = item.condition;
+
+    const itemsList = document.createElement("div");
+    itemsList.className = "memory-items";
+
+    item.items.forEach((memoryItem, itemIndex) => {
+      const itemDiv = document.createElement("div");
+      itemDiv.className = "memory-item";
+
+      if (currentMode === "study") {
+        const parts = memoryItem.split(" ....... ");
+        const leftSpan = document.createElement("span");
+        leftSpan.className = "memory-item-left";
+        leftSpan.textContent = parts[0];
+
+        const dotsSpan = document.createElement("span");
+        dotsSpan.className = "memory-item-dots";
+
+        const rightSpan = document.createElement("span");
+        rightSpan.className = "memory-item-right";
+        rightSpan.textContent = parts[1] || "";
+
+        itemDiv.appendChild(leftSpan);
+        itemDiv.appendChild(dotsSpan);
+        itemDiv.appendChild(rightSpan);
+      } else if (currentMode === "quiz") {
+        if (Math.random() < 0.6) {
+          const parts = memoryItem.split(" ....... ");
+          const leftSpan = document.createElement("span");
+          leftSpan.className = "memory-item-left";
+          leftSpan.textContent = parts[0];
+
+          const dotsSpan = document.createElement("span");
+          dotsSpan.className = "memory-item-dots";
+
+          const rightSpan = document.createElement("span");
+          rightSpan.className = "memory-item-right";
+          rightSpan.textContent = parts[1] || "";
+
+          itemDiv.appendChild(leftSpan);
+          itemDiv.appendChild(dotsSpan);
+          itemDiv.appendChild(rightSpan);
+        } else {
+          itemDiv.className += " memory-hidden";
+          itemDiv.setAttribute("data-card", index);
+          itemDiv.setAttribute("data-item", itemIndex);
+          itemDiv.setAttribute("data-answer", memoryItem);
+          itemDiv.textContent = "[CLASSIFIED]";
+          itemDiv.onclick = () => handleMemoryClick(itemDiv);
+        }
+      } else if (currentMode === "fill") {
+        const parts = memoryItem.split(" ....... ");
+        const leftSpan = document.createElement("span");
+        leftSpan.className = "memory-item-left";
+        leftSpan.textContent = parts[0];
+
+        const dotsSpan = document.createElement("span");
+        dotsSpan.className = "memory-item-dots";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "memory-input";
+        input.placeholder = "Enter action...";
+        input.setAttribute("data-answer", parts[1] || "");
+        input.addEventListener("blur", () => checkMemoryAnswer(input));
+        input.addEventListener("keypress", (e) => {
+          if (e.key === "Enter") {
+            checkMemoryAnswer(input);
+          }
+        });
+
+        itemDiv.appendChild(leftSpan);
+        itemDiv.appendChild(dotsSpan);
+        itemDiv.appendChild(input);
+      }
+
+      itemsList.appendChild(itemDiv);
+    });
+
+    card.appendChild(condition);
+    card.appendChild(itemsList);
+    cardsGrid.appendChild(card);
+  });
+
+  container.appendChild(cardsGrid);
+}
+
+function handleMemoryClick(element) {
+  if (currentMode !== "quiz") return;
+
+  if (element.classList.contains("memory-hidden")) {
+    const answer = element.getAttribute("data-answer");
+    element.textContent = answer;
+    element.classList.remove("memory-hidden");
+    element.classList.add("memory-correct");
+    correctCount++;
+    streakCount++;
+    updateStats();
+    updateProgress();
+  }
+}
+
+function checkMemoryAnswer(input) {
+  const correctAnswer = input.getAttribute("data-answer").toLowerCase();
+  const userAnswer = input.value.toLowerCase().trim();
+
+  if (userAnswer === correctAnswer || correctAnswer.includes(userAnswer)) {
+    input.parentElement.classList.add("memory-correct");
+    correctCount++;
+    streakCount++;
+  } else if (userAnswer !== "") {
+    input.parentElement.classList.add("memory-incorrect");
+    incorrectCount++;
+    streakCount = 0;
+  }
+  updateStats();
+  updateProgress();
 }
 
 function handleCellClick(cell) {
@@ -370,11 +570,21 @@ function updateStats() {
 }
 
 function updateProgress() {
-  const totalCells = document.querySelectorAll(".limitation-cell").length;
-  const completedCells = document.querySelectorAll(
-    ".limitation-cell.correct, .limitation-cell.incorrect"
-  ).length;
-  const progress = (completedCells / totalCells) * 100;
+  let totalCells, completedCells;
+
+  if (currentCategory === "Memory Items") {
+    totalCells = document.querySelectorAll(".memory-item").length;
+    completedCells = document.querySelectorAll(
+      ".memory-correct, .memory-incorrect"
+    ).length;
+  } else {
+    totalCells = document.querySelectorAll(".limitation-cell").length;
+    completedCells = document.querySelectorAll(
+      ".limitation-cell.correct, .limitation-cell.incorrect"
+    ).length;
+  }
+
+  const progress = totalCells > 0 ? (completedCells / totalCells) * 100 : 0;
   document.getElementById("progress-fill").style.width = progress + "%";
 }
 
