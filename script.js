@@ -252,6 +252,518 @@ let savedProgress = {
   category: "Structural Limitations",
 };
 
+// Enhanced answer checking with smart matching
+function smartAnswerCheck(userAnswer, correctAnswer) {
+  const normalizeAnswer = (answer) => {
+    return answer
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s\.\-]/g, "") // Remove special chars except dots and dashes
+      .replace(/\s+/g, " ") // Normalize whitespace
+      .replace(/\bfeet\b|\bft\b/g, "ft") // Normalize feet
+      .replace(/\binches\b|\bin\b/g, "in") // Normalize inches
+      .replace(/\bpounds\b|\blbs\b|\bpound\b/g, "lbs") // Normalize weight
+      .replace(/\bgallons\b|\bgal\b/g, "gal") // Normalize gallons
+      .replace(/\bknots\b|\bkts\b|\bkt\b/g, "kts") // Normalize knots
+      .replace(/\bdegrees\b|\bdeg\b|°/g, "°") // Normalize degrees
+      .replace(/\bcelsius\b/g, "c") // Normalize celsius
+      .replace(/\bmaximum\b|\bmax\b/g, "max") // Normalize maximum
+      .replace(/\bminimum\b|\bmin\b/g, "min") // Normalize minimum
+      .replace(/\boperating\b|\bops\b/g, "operating"); // Normalize operating
+  };
+
+  const userNorm = normalizeAnswer(userAnswer);
+  const correctNorm = normalizeAnswer(correctAnswer);
+
+  // Exact match
+  if (userNorm === correctNorm) return { isCorrect: true, score: 100 };
+
+  // Extract numeric values and units for comparison
+  const extractNumbers = (str) => {
+    const matches = str.match(/(\d+(?:,\d{3})*(?:\.\d+)?)/g);
+    return matches ? matches.map((m) => parseFloat(m.replace(/,/g, ""))) : [];
+  };
+
+  const userNumbers = extractNumbers(userAnswer);
+  const correctNumbers = extractNumbers(correctAnswer);
+
+  // Check if numbers match (allowing for different formatting)
+  if (userNumbers.length === correctNumbers.length && userNumbers.length > 0) {
+    const numbersMatch = userNumbers.every(
+      (num, i) => Math.abs(num - correctNumbers[i]) < 0.001
+    );
+    if (numbersMatch) {
+      // Check if units are similar
+      const userUnits = userNorm.replace(/[\d\s,\.]/g, "");
+      const correctUnits = correctNorm.replace(/[\d\s,\.]/g, "");
+      if (
+        userUnits === correctUnits ||
+        userUnits.includes(correctUnits) ||
+        correctUnits.includes(userUnits)
+      ) {
+        return { isCorrect: true, score: 95 };
+      }
+    }
+  }
+
+  // Partial credit for close matches
+  if (userNorm.includes(correctNorm) || correctNorm.includes(userNorm)) {
+    return { isCorrect: true, score: 80 };
+  }
+
+  // Check for common abbreviations or alternative formats
+  const commonAlternatives = {
+    "isa +35°c": ["isa+35°c", "isa+35", "isa + 35", "isa plus 35"],
+    "-40°c": ["-40c", "-40 c", "minus 40", "negative 40"],
+    "+/- 2%": ["±2%", "± 2%", "plus minus 2%", "+- 2%", "plus or minus 2%"],
+    "15kts": ["15 kts", "15 knots", "fifteen knots"],
+    "31,000ft": [
+      "31000ft",
+      "31,000 ft",
+      "31000 ft",
+      "thirty one thousand feet",
+    ],
+  };
+
+  for (const [standard, alternatives] of Object.entries(commonAlternatives)) {
+    if (normalizeAnswer(standard) === correctNorm) {
+      if (alternatives.some((alt) => normalizeAnswer(alt) === userNorm)) {
+        return { isCorrect: true, score: 90 };
+      }
+    }
+  }
+
+  return { isCorrect: false, score: 0 };
+}
+
+// Generate helpful placeholder text
+function generatePlaceholder(correctValue) {
+  const value = correctValue.toLowerCase();
+
+  if (value.includes("kias") || value.includes("knots")) {
+    return "Enter speed (e.g., 250 KIAS)";
+  }
+  if (value.includes("°c")) {
+    return "Enter temperature (e.g., -40°C)";
+  }
+  if (value.includes("lbs")) {
+    return "Enter weight (e.g., 85,098 lbs)";
+  }
+  if (value.includes("ft")) {
+    return "Enter altitude/distance (e.g., 41,000 ft)";
+  }
+  if (value.includes("%")) {
+    return "Enter percentage (e.g., +/- 2%)";
+  }
+  if (value.includes("gal")) {
+    return "Enter volume (e.g., 20,935 gal)";
+  }
+  if (value.includes("psi")) {
+    return "Enter pressure (e.g., 8.4 PSI)";
+  }
+
+  return "Enter value...";
+}
+
+// Generate autocomplete suggestions
+function generateSuggestions(correctValue) {
+  const suggestions = [];
+  const value = correctValue.toLowerCase();
+
+  // Extract numbers from correct value
+  const numbers = correctValue.match(/\d+/g);
+  if (numbers) {
+    const mainNumber = numbers[0];
+
+    // Generate variations
+    if (value.includes("ft")) {
+      suggestions.push(
+        `${mainNumber} ft`,
+        `${mainNumber} feet`,
+        `${mainNumber}ft`
+      );
+    }
+    if (value.includes("lbs")) {
+      suggestions.push(
+        `${mainNumber} lbs`,
+        `${mainNumber} pounds`,
+        `${mainNumber}lbs`
+      );
+    }
+    if (value.includes("kias")) {
+      suggestions.push(
+        `${mainNumber} KIAS`,
+        `${mainNumber} knots`,
+        `${mainNumber}kts`
+      );
+    }
+    if (value.includes("°c")) {
+      suggestions.push(
+        `${mainNumber}°C`,
+        `${mainNumber} degrees`,
+        `${mainNumber}°`
+      );
+    }
+  }
+
+  return suggestions;
+}
+
+// Calculate string similarity
+function calculateSimilarity(str1, str2) {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+
+  if (longer.length === 0) return 1.0;
+
+  const distance = levenshteinDistance(longer, shorter);
+  return (longer.length - distance) / longer.length;
+}
+
+// Levenshtein distance calculation
+function levenshteinDistance(str1, str2) {
+  const matrix = [];
+
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  return matrix[str2.length][str1.length];
+}
+
+// Handle real-time input changes
+function handleInputChange(input) {
+  const userAnswer = input.value;
+  const correctAnswer = input.getAttribute("data-correct");
+  const indicator = input.parentElement.querySelector(".validation-indicator");
+
+  if (!indicator) return; // Safety check
+
+  if (userAnswer.length === 0) {
+    indicator.className = "validation-indicator";
+    indicator.innerHTML = "";
+    return;
+  }
+
+  const result = smartAnswerCheck(userAnswer, correctAnswer);
+
+  if (result.isCorrect) {
+    if (result.score === 100) {
+      indicator.className = "validation-indicator perfect";
+      indicator.innerHTML = "✓";
+    } else if (result.score >= 90) {
+      indicator.className = "validation-indicator good";
+      indicator.innerHTML = "✓";
+    } else {
+      indicator.className = "validation-indicator close";
+      indicator.innerHTML = "~";
+    }
+  } else {
+    // Show partial feedback
+    if (userAnswer.length > 2) {
+      const similarity = calculateSimilarity(userAnswer, correctAnswer);
+      if (similarity > 0.5) {
+        indicator.className = "validation-indicator partial";
+        indicator.innerHTML = "?";
+      } else {
+        indicator.className = "validation-indicator wrong";
+        indicator.innerHTML = "✗";
+      }
+    } else {
+      indicator.className = "validation-indicator";
+      indicator.innerHTML = "";
+    }
+  }
+}
+
+// Handle input submission
+function handleInputSubmit(input) {
+  const userAnswer = input.value.trim();
+  const correctAnswer = input.getAttribute("data-correct");
+  const cell = input.closest("td");
+
+  if (!cell || userAnswer === "") return;
+
+  const result = smartAnswerCheck(userAnswer, correctAnswer);
+
+  // Remove any existing feedback
+  const existingFeedback = cell.querySelector(".answer-feedback");
+  if (existingFeedback) {
+    existingFeedback.remove();
+  }
+
+  if (result.isCorrect) {
+    cell.classList.add("correct");
+    cell.classList.remove("incorrect", "partial");
+
+    // Show the correct answer and score
+    const feedback = document.createElement("div");
+    feedback.className = "answer-feedback";
+    feedback.innerHTML = `
+      <div class="user-answer">${userAnswer}</div>
+      <div class="score">Score: ${result.score}%</div>
+    `;
+
+    input.style.display = "none";
+    input.parentElement.appendChild(feedback);
+
+    correctCount++;
+    streakCount++;
+
+    // Bonus points for perfect answers
+    if (result.score === 100) {
+      showBonusAnimation(cell);
+    }
+  } else {
+    cell.classList.add("incorrect");
+    cell.classList.remove("correct", "partial");
+
+    // Show what they entered vs correct answer
+    const feedback = document.createElement("div");
+    feedback.className = "answer-feedback incorrect";
+    feedback.innerHTML = `
+      <div class="user-answer wrong">Your answer: ${userAnswer}</div>
+      <div class="correct-answer">Correct: ${correctAnswer}</div>
+    `;
+
+    input.style.display = "none";
+    input.parentElement.appendChild(feedback);
+
+    incorrectCount++;
+    streakCount = 0;
+  }
+
+  updateStats();
+  updateProgress();
+  saveProgress();
+}
+
+// Generate progressive hints
+function generateHints(correctValue) {
+  const hints = [];
+  const value = correctValue.toLowerCase();
+
+  // First hint: general category
+  if (value.includes("ft") || value.includes("feet")) {
+    hints.push("This is a measurement of distance or altitude.");
+  } else if (value.includes("lbs") || value.includes("pounds")) {
+    hints.push("This is a weight measurement.");
+  } else if (value.includes("°c") || value.includes("temperature")) {
+    hints.push("This is a temperature measurement.");
+  } else if (value.includes("kias") || value.includes("knots")) {
+    hints.push("This is a speed measurement.");
+  } else if (value.includes("%")) {
+    hints.push("This is a percentage value.");
+  } else {
+    hints.push("Think about the units this measurement would use.");
+  }
+
+  // Second hint: number range
+  const numbers = correctValue.match(/\d+/g);
+  if (numbers && numbers.length > 0) {
+    const mainNumber = parseInt(numbers[0]);
+    if (mainNumber < 100) {
+      hints.push("The number is less than 100.");
+    } else if (mainNumber < 1000) {
+      hints.push("The number is between 100 and 1,000.");
+    } else if (mainNumber < 10000) {
+      hints.push("The number is between 1,000 and 10,000.");
+    } else {
+      hints.push("The number is greater than 10,000.");
+    }
+  }
+
+  // Third hint: partial reveal
+  if (correctValue.length > 3) {
+    const masked =
+      correctValue.substring(0, 2) +
+      "..." +
+      correctValue.substring(correctValue.length - 2);
+    hints.push(`The answer starts and ends like this: ${masked}`);
+  }
+
+  return hints;
+}
+
+// Show hint for difficult questions
+function showHint(input, correctValue) {
+  const hints = generateHints(correctValue);
+  const hintLevel = parseInt(input.getAttribute("data-hint-level") || "0");
+  const hintIndex = Math.min(hintLevel, hints.length - 1);
+
+  // Create hint popup
+  const hintPopup = document.createElement("div");
+  hintPopup.className = "hint-popup";
+  hintPopup.innerHTML = `
+    <div class="hint-content">
+      <div class="hint-title">Hint ${hintIndex + 1}:</div>
+      <div class="hint-text">${hints[hintIndex]}</div>
+      <button class="hint-close" onclick="this.parentElement.parentElement.remove()">Got it!</button>
+    </div>
+  `;
+
+  document.body.appendChild(hintPopup);
+
+  // Position hint near input
+  const rect = input.getBoundingClientRect();
+  hintPopup.style.position = "fixed";
+  hintPopup.style.top = rect.bottom + 5 + "px";
+  hintPopup.style.left = rect.left + "px";
+  hintPopup.style.zIndex = "1000";
+
+  // Increment hint level
+  input.setAttribute("data-hint-level", (hintLevel + 1).toString());
+
+  // Auto-close after 5 seconds
+  setTimeout(() => {
+    if (hintPopup.parentElement) {
+      hintPopup.remove();
+    }
+  }, 5000);
+}
+
+// Show bonus animation for perfect answers
+function showBonusAnimation(cell) {
+  const bonus = document.createElement("div");
+  bonus.className = "bonus-animation";
+  bonus.textContent = "+PERFECT!";
+  cell.appendChild(bonus);
+
+  setTimeout(() => {
+    bonus.remove();
+  }, 2000);
+}
+
+// Enhanced fill-in mode with multiple input types
+function createEnhancedFillInMode() {
+  console.log("Starting enhanced fill-in mode...");
+
+  // Get the current category data
+  const category = limitationsCategories[currentCategory];
+  if (!category) {
+    console.error("No category found:", currentCategory);
+    return;
+  }
+
+  console.log("Category data:", category);
+
+  // Clear existing table and rebuild for fill mode
+  const tbody = document.getElementById("table-body");
+  tbody.innerHTML = "";
+
+  // Rebuild table with input fields
+  category.data.forEach((item, rowIndex) => {
+    const row = document.createElement("tr");
+    const keys = Object.keys(item);
+
+    keys.forEach((key, colIndex) => {
+      const cell = document.createElement("td");
+
+      // First column(s) show the question/label, last column(s) get input fields
+      if (
+        colIndex === keys.length - 1 ||
+        (keys.length === 2 && colIndex === 1)
+      ) {
+        // This is the answer cell - create input
+        const correctValue = item[key];
+
+        // Create input container
+        const inputContainer = document.createElement("div");
+        inputContainer.className = "input-container";
+
+        // Create enhanced text input
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "enhanced-input-cell";
+        input.setAttribute("data-correct", correctValue);
+        input.setAttribute("data-index", rowIndex.toString());
+        input.setAttribute("data-field", key);
+
+        // Set placeholder with hints
+        input.placeholder = generatePlaceholder(correctValue);
+
+        // Add autocomplete suggestions
+        input.setAttribute("list", `suggestions-${rowIndex}-${key}`);
+        const datalist = document.createElement("datalist");
+        datalist.id = `suggestions-${rowIndex}-${key}`;
+
+        const suggestions = generateSuggestions(correctValue);
+        suggestions.forEach((suggestion) => {
+          const option = document.createElement("option");
+          option.value = suggestion;
+          datalist.appendChild(option);
+        });
+
+        document.body.appendChild(datalist);
+
+        // Enhanced event handlers
+        input.addEventListener("input", (e) => {
+          handleInputChange(e.target);
+        });
+
+        input.addEventListener("blur", (e) => {
+          handleInputSubmit(e.target);
+        });
+
+        input.addEventListener("keypress", (e) => {
+          if (e.key === "Enter") {
+            handleInputSubmit(e.target);
+          }
+        });
+
+        // Add hint button
+        const hintBtn = document.createElement("button");
+        hintBtn.className = "hint-btn";
+        hintBtn.innerHTML = "💡";
+        hintBtn.title = "Get a hint";
+        hintBtn.onclick = (e) => {
+          e.stopPropagation();
+          showHint(input, correctValue);
+        };
+
+        // Add validation indicator
+        const indicator = document.createElement("div");
+        indicator.className = "validation-indicator";
+
+        inputContainer.appendChild(input);
+        inputContainer.appendChild(hintBtn);
+        inputContainer.appendChild(indicator);
+
+        cell.appendChild(inputContainer);
+        cell.classList.add("fill-mode-cell");
+      } else {
+        // This is a label cell - show the question/prompt
+        cell.textContent = item[key];
+        cell.classList.add("fill-mode-label");
+      }
+
+      row.appendChild(cell);
+    });
+
+    tbody.appendChild(row);
+  });
+
+  console.log("Enhanced fill-in mode setup complete!");
+}
+
 function init() {
   populateTable();
   updateStats();
@@ -312,8 +824,6 @@ function populateTable() {
 
   if (currentMode === "quiz") {
     hideRandomCells();
-  } else if (currentMode === "fill") {
-    createFillInMode();
   }
 }
 
@@ -480,59 +990,27 @@ function hideRandomCells() {
   });
 }
 
-function createFillInMode() {
-  const cells = document.querySelectorAll(".limitation-cell");
-  cells.forEach((cell, cellIndex) => {
-    const dataIndex = cell.getAttribute("data-index");
-    const field = cell.getAttribute("data-field");
-    const input = document.createElement("input");
-    input.type = "text";
-    input.className = "input-cell";
-    input.placeholder = "Enter value...";
-    input.addEventListener("blur", () =>
-      checkFillInAnswer(input, dataIndex, field)
-    );
-    input.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        checkFillInAnswer(input, dataIndex, field);
-      }
-    });
-    cell.innerHTML = "";
-    cell.appendChild(input);
-  });
-}
-
-function checkFillInAnswer(input, dataIndex, field) {
-  const category = limitationsCategories[currentCategory];
-  const correctValue = category.data[dataIndex][field].toLowerCase();
-  const userValue = input.value.toLowerCase().trim();
-
-  if (userValue === correctValue) {
-    input.parentElement.classList.add("correct");
-    correctCount++;
-    streakCount++;
-  } else if (userValue !== "") {
-    input.parentElement.classList.add("incorrect");
-    incorrectCount++;
-    streakCount = 0;
-  }
-  updateStats();
-  updateProgress();
-}
-
 function setMode(mode) {
   currentMode = mode;
 
-  document
-    .querySelectorAll(".btn")
-    .forEach((btn) => btn.classList.remove("active"));
-  event.target.classList.add("active");
-
+  // Clear any existing timers
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
   }
 
+  // Update active button
+  document
+    .querySelectorAll(".btn")
+    .forEach((btn) => btn.classList.remove("active"));
+  const buttons = document.querySelectorAll(".btn");
+  buttons.forEach((btn) => {
+    if (btn.onclick && btn.onclick.toString().includes(`'${mode}'`)) {
+      btn.classList.add("active");
+    }
+  });
+
+  // Handle timer mode
   if (mode === "timer") {
     startTimer();
     document.getElementById("timer").style.display = "block";
@@ -540,7 +1018,15 @@ function setMode(mode) {
     document.getElementById("timer").style.display = "none";
   }
 
-  populateTable();
+  // Call the appropriate mode function
+  if (mode === "fill") {
+    console.log("Setting fill mode...");
+    createEnhancedFillInMode();
+  } else {
+    // For other modes, use the regular table population
+    populateTable();
+  }
+
   saveProgress();
 }
 
@@ -578,9 +1064,11 @@ function updateProgress() {
       ".memory-correct, .memory-incorrect"
     ).length;
   } else {
-    totalCells = document.querySelectorAll(".limitation-cell").length;
+    totalCells = document.querySelectorAll(
+      ".limitation-cell, .fill-mode-cell"
+    ).length;
     completedCells = document.querySelectorAll(
-      ".limitation-cell.correct, .limitation-cell.incorrect"
+      ".limitation-cell.correct, .limitation-cell.incorrect, .fill-mode-cell.correct, .fill-mode-cell.incorrect"
     ).length;
   }
 

@@ -20,6 +20,7 @@
     margin-bottom: 8px;
   }
 }
+
 #category-select {
   font-family: "JetBrains Mono", monospace;
   background: rgba(0, 255, 65, 0.1);
@@ -356,6 +357,405 @@ tr:hover {
   animation: progressShine 2s infinite;
 }
 
+/* ============================================== */
+/* REFINED FILL-IN-THE-BLANK STYLES */
+/* ============================================== */
+
+/* Enhanced input container */
+.input-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  position: relative;
+}
+
+/* Enhanced input field - refined to match app style */
+.enhanced-input-cell {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #00ff41;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  flex: 1;
+  border-radius: 0;
+  color: #00ff41;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 300;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.enhanced-input-cell::placeholder {
+  color: rgba(0, 255, 65, 0.5);
+  font-style: italic;
+  font-weight: 300;
+}
+
+.enhanced-input-cell:focus {
+  outline: none;
+  background: rgba(0, 255, 65, 0.05);
+  border-color: #66ff66;
+  box-shadow: 0 0 5px rgba(0, 255, 65, 0.2);
+}
+
+/* Fill mode cell styling - subtle integration */
+.fill-mode-cell {
+  background: rgba(0, 255, 65, 0.01) !important;
+  border-left: 1px solid rgba(0, 255, 65, 0.3);
+  position: relative;
+}
+
+.fill-mode-cell:hover {
+  background: rgba(0, 255, 65, 0.03) !important;
+}
+
+/* Validation indicator - smaller and subtler */
+.validation-indicator {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 400;
+  font-size: 0.7rem;
+  border: 1px solid rgba(0, 255, 65, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(0, 255, 65, 0.4);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.validation-indicator.perfect {
+  background: rgba(0, 255, 65, 0.1);
+  border-color: #00ff41;
+  color: #00ff41;
+  animation: perfectPulse 0.8s ease-in-out;
+}
+
+.validation-indicator.good {
+  background: rgba(0, 200, 50, 0.1);
+  border-color: #00cc33;
+  color: #00cc33;
+  animation: goodPulse 0.6s ease-in-out;
+}
+
+.validation-indicator.close {
+  background: rgba(255, 165, 0, 0.1);
+  border-color: #ffa500;
+  color: #ffa500;
+  animation: closePulse 0.5s ease-in-out;
+}
+
+.validation-indicator.partial {
+  background: rgba(255, 255, 0, 0.1);
+  border-color: #ffff00;
+  color: #ffff00;
+  animation: partialPulse 0.4s ease-in-out infinite;
+}
+
+.validation-indicator.wrong {
+  background: rgba(255, 0, 0, 0.1);
+  border-color: #ff0000;
+  color: #ff0000;
+  animation: wrongShake 0.3s ease-in-out;
+}
+
+/* Hint button - smaller and more integrated */
+.hint-btn {
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgba(0, 255, 65, 0.4);
+  background: rgba(0, 255, 65, 0.05);
+  color: rgba(0, 255, 65, 0.7);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.hint-btn:hover {
+  background: rgba(0, 255, 65, 0.1);
+  color: #00ff41;
+  border-color: #00ff41;
+  transform: scale(1.05);
+}
+
+.hint-btn:active {
+  transform: scale(0.95);
+}
+
+/* Hint popup - refined styling */
+.hint-popup {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid #00ff41;
+  border-radius: 0;
+  padding: 0;
+  max-width: 280px;
+  z-index: 1001;
+  animation: hintSlideIn 0.3s ease-out;
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+}
+
+.hint-content {
+  padding: 12px;
+}
+
+.hint-title {
+  font-weight: 400;
+  color: #ffffff;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+  padding-bottom: 4px;
+}
+
+.hint-text {
+  color: #00ff41;
+  margin-bottom: 10px;
+  line-height: 1.3;
+  font-size: 0.8rem;
+  font-weight: 300;
+}
+
+.hint-close {
+  background: rgba(0, 255, 65, 0.05);
+  border: 1px solid #00ff41;
+  color: #00ff41;
+  padding: 4px 10px;
+  border-radius: 0;
+  cursor: pointer;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  font-weight: 300;
+  transition: all 0.2s ease;
+}
+
+.hint-close:hover {
+  background: rgba(0, 255, 65, 0.1);
+}
+
+/* Answer feedback - refined */
+.answer-feedback {
+  background: rgba(0, 255, 65, 0.05);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  border-radius: 0;
+  padding: 6px 10px;
+  margin-top: 4px;
+  animation: feedbackSlideIn 0.3s ease-out;
+  font-size: 0.8rem;
+}
+
+.answer-feedback.incorrect {
+  background: rgba(255, 0, 0, 0.05);
+  border-color: rgba(255, 0, 0, 0.3);
+}
+
+.user-answer {
+  font-weight: 400;
+  margin-bottom: 3px;
+}
+
+.user-answer.wrong {
+  color: #ff6666;
+}
+
+.correct-answer {
+  color: #00ff41;
+  font-size: 0.75rem;
+  font-style: italic;
+  font-weight: 300;
+}
+
+.score {
+  color: #66ff66;
+  font-size: 0.7rem;
+  font-weight: 300;
+  margin-top: 3px;
+}
+
+/* Bonus animation - smaller */
+.bonus-animation {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #00ff41;
+  font-weight: 400;
+  font-size: 0.7rem;
+  background: rgba(0, 255, 65, 0.1);
+  padding: 3px 6px;
+  border-radius: 0;
+  border: 1px solid #00ff41;
+  animation: bonusFloat 1.5s ease-out forwards;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Enhanced correct/incorrect states - subtle */
+.fill-mode-cell.correct {
+  background: rgba(0, 255, 65, 0.08) !important;
+  border-left-color: #00ff41;
+  animation: correctFillGlow 0.6s ease-out;
+}
+
+.fill-mode-cell.incorrect {
+  background: rgba(255, 0, 0, 0.08) !important;
+  border-left-color: #ff0000;
+  animation: incorrectFillShake 0.5s ease-out;
+}
+
+.fill-mode-cell.partial {
+  background: rgba(255, 165, 0, 0.08) !important;
+  border-left-color: #ffa500;
+  animation: partialFillPulse 0.8s ease-in-out infinite;
+}
+
+/* ============================================ */
+/* REFINED ANIMATIONS */
+/* ============================================ */
+
+@keyframes perfectPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes goodPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 6px rgba(0, 200, 50, 0.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes closePulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 5px rgba(255, 165, 0, 0.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes partialPulse {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes wrongShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes hintSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes feedbackSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bonusFloat {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-15px);
+  }
+}
+
+@keyframes correctFillGlow {
+  0% {
+    box-shadow: none;
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(0, 255, 65, 0.2);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+@keyframes incorrectFillShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-1px);
+  }
+  75% {
+    transform: translateX(1px);
+  }
+}
+
+@keyframes partialFillPulse {
+  0%,
+  100% {
+    border-left-color: rgba(255, 165, 0, 0.5);
+  }
+  50% {
+    border-left-color: #ffa500;
+  }
+}
+
+/* ============================================ */
+/* ORIGINAL ANIMATIONS */
+/* ============================================ */
+
 @keyframes textFlicker {
   0%,
   98% {
@@ -423,6 +823,10 @@ tr:hover {
     transform: translateX(100%);
   }
 }
+
+/* ============================================ */
+/* RESPONSIVE STYLES */
+/* ============================================ */
 
 @media (max-width: 768px) {
   body {
@@ -527,6 +931,43 @@ tr:hover {
     padding: 3px;
     font-size: 0.65rem;
   }
+
+  /* Refined Fill-in-the-Blank Mobile Styles */
+  .input-container {
+    gap: 4px;
+  }
+
+  .enhanced-input-cell {
+    padding: 5px 8px;
+    font-size: 0.8rem;
+  }
+
+  .hint-btn {
+    width: 18px;
+    height: 18px;
+    font-size: 0.65rem;
+  }
+
+  .validation-indicator {
+    width: 16px;
+    height: 16px;
+    font-size: 0.65rem;
+  }
+
+  .hint-popup {
+    max-width: 240px;
+    font-size: 0.75rem;
+  }
+
+  .answer-feedback {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+
+  .bonus-animation {
+    font-size: 0.65rem;
+    padding: 2px 5px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -584,7 +1025,46 @@ tr:hover {
     padding: 2px;
     font-size: 0.6rem;
   }
+
+  /* Refined Fill-in-the-Blank Small Mobile Styles */
+  .input-container {
+    gap: 3px;
+  }
+
+  .enhanced-input-cell {
+    padding: 4px 6px;
+    font-size: 0.75rem;
+    min-width: 100px;
+  }
+
+  .hint-btn {
+    width: 16px;
+    height: 16px;
+    font-size: 0.6rem;
+  }
+
+  .validation-indicator {
+    width: 14px;
+    height: 14px;
+    font-size: 0.6rem;
+  }
+
+  .hint-popup {
+    max-width: 200px;
+    font-size: 0.7rem;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+  }
+
+  .answer-feedback {
+    font-size: 0.7rem;
+  }
 }
+
+/* ============================================ */
+/* MEMORY ITEMS STYLES */
+/* ============================================ */
 
 .memory-cards-grid {
   display: grid;
