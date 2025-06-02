@@ -1,4 +1,4 @@
-const CACHE_NAME = "aircraft-limitations-v2";
+const CACHE_NAME = "aircraft-limitations-v2.0.1"; // INCREMENT THIS VERSION
 const urlsToCache = [
   "./",
   "./index.html",

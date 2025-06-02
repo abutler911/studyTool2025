@@ -252,33 +252,51 @@ let savedProgress = {
   category: "Structural Limitations",
 };
 
+// Enhanced fill-in-the-blank configuration
+let fillModeConfig = {
+  difficulty: "medium",
+  randomSelection: true,
+  fillPercentage: 50,
+  showHints: true,
+  instantFeedback: true,
+  adaptiveDifficulty: false,
+};
+
+// Performance tracking
+let performanceTracker = {
+  totalAttempts: 0,
+  correctAnswers: 0,
+  averageHintsUsed: 0,
+  averageTimePerQuestion: 0,
+};
+
+let hasShownFillModeHelp = false;
+
 // Enhanced answer checking with smart matching
 function smartAnswerCheck(userAnswer, correctAnswer) {
   const normalizeAnswer = (answer) => {
     return answer
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s\.\-]/g, "") // Remove special chars except dots and dashes
-      .replace(/\s+/g, " ") // Normalize whitespace
-      .replace(/\bfeet\b|\bft\b/g, "ft") // Normalize feet
-      .replace(/\binches\b|\bin\b/g, "in") // Normalize inches
-      .replace(/\bpounds\b|\blbs\b|\bpound\b/g, "lbs") // Normalize weight
-      .replace(/\bgallons\b|\bgal\b/g, "gal") // Normalize gallons
-      .replace(/\bknots\b|\bkts\b|\bkt\b/g, "kts") // Normalize knots
-      .replace(/\bdegrees\b|\bdeg\b|°/g, "°") // Normalize degrees
-      .replace(/\bcelsius\b/g, "c") // Normalize celsius
-      .replace(/\bmaximum\b|\bmax\b/g, "max") // Normalize maximum
-      .replace(/\bminimum\b|\bmin\b/g, "min") // Normalize minimum
-      .replace(/\boperating\b|\bops\b/g, "operating"); // Normalize operating
+      .replace(/[^\w\s\.\-]/g, "")
+      .replace(/\s+/g, " ")
+      .replace(/\bfeet\b|\bft\b/g, "ft")
+      .replace(/\binches\b|\bin\b/g, "in")
+      .replace(/\bpounds\b|\blbs\b|\bpound\b/g, "lbs")
+      .replace(/\bgallons\b|\bgal\b/g, "gal")
+      .replace(/\bknots\b|\bkts\b|\bkt\b/g, "kts")
+      .replace(/\bdegrees\b|\bdeg\b|°/g, "°")
+      .replace(/\bcelsius\b/g, "c")
+      .replace(/\bmaximum\b|\bmax\b/g, "max")
+      .replace(/\bminimum\b|\bmin\b/g, "min")
+      .replace(/\boperating\b|\bops\b/g, "operating");
   };
 
   const userNorm = normalizeAnswer(userAnswer);
   const correctNorm = normalizeAnswer(correctAnswer);
 
-  // Exact match
   if (userNorm === correctNorm) return { isCorrect: true, score: 100 };
 
-  // Extract numeric values and units for comparison
   const extractNumbers = (str) => {
     const matches = str.match(/(\d+(?:,\d{3})*(?:\.\d+)?)/g);
     return matches ? matches.map((m) => parseFloat(m.replace(/,/g, ""))) : [];
@@ -287,13 +305,11 @@ function smartAnswerCheck(userAnswer, correctAnswer) {
   const userNumbers = extractNumbers(userAnswer);
   const correctNumbers = extractNumbers(correctAnswer);
 
-  // Check if numbers match (allowing for different formatting)
   if (userNumbers.length === correctNumbers.length && userNumbers.length > 0) {
     const numbersMatch = userNumbers.every(
       (num, i) => Math.abs(num - correctNumbers[i]) < 0.001
     );
     if (numbersMatch) {
-      // Check if units are similar
       const userUnits = userNorm.replace(/[\d\s,\.]/g, "");
       const correctUnits = correctNorm.replace(/[\d\s,\.]/g, "");
       if (
@@ -306,12 +322,10 @@ function smartAnswerCheck(userAnswer, correctAnswer) {
     }
   }
 
-  // Partial credit for close matches
   if (userNorm.includes(correctNorm) || correctNorm.includes(userNorm)) {
     return { isCorrect: true, score: 80 };
   }
 
-  // Check for common abbreviations or alternative formats
   const commonAlternatives = {
     "isa +35°c": ["isa+35°c", "isa+35", "isa + 35", "isa plus 35"],
     "-40°c": ["-40c", "-40 c", "minus 40", "negative 40"],
@@ -334,79 +348,6 @@ function smartAnswerCheck(userAnswer, correctAnswer) {
   }
 
   return { isCorrect: false, score: 0 };
-}
-
-// Generate helpful placeholder text
-function generatePlaceholder(correctValue) {
-  const value = correctValue.toLowerCase();
-
-  if (value.includes("kias") || value.includes("knots")) {
-    return "Enter speed (e.g., 250 KIAS)";
-  }
-  if (value.includes("°c")) {
-    return "Enter temperature (e.g., -40°C)";
-  }
-  if (value.includes("lbs")) {
-    return "Enter weight (e.g., 85,098 lbs)";
-  }
-  if (value.includes("ft")) {
-    return "Enter altitude/distance (e.g., 41,000 ft)";
-  }
-  if (value.includes("%")) {
-    return "Enter percentage (e.g., +/- 2%)";
-  }
-  if (value.includes("gal")) {
-    return "Enter volume (e.g., 20,935 gal)";
-  }
-  if (value.includes("psi")) {
-    return "Enter pressure (e.g., 8.4 PSI)";
-  }
-
-  return "Enter value...";
-}
-
-// Generate autocomplete suggestions
-function generateSuggestions(correctValue) {
-  const suggestions = [];
-  const value = correctValue.toLowerCase();
-
-  // Extract numbers from correct value
-  const numbers = correctValue.match(/\d+/g);
-  if (numbers) {
-    const mainNumber = numbers[0];
-
-    // Generate variations
-    if (value.includes("ft")) {
-      suggestions.push(
-        `${mainNumber} ft`,
-        `${mainNumber} feet`,
-        `${mainNumber}ft`
-      );
-    }
-    if (value.includes("lbs")) {
-      suggestions.push(
-        `${mainNumber} lbs`,
-        `${mainNumber} pounds`,
-        `${mainNumber}lbs`
-      );
-    }
-    if (value.includes("kias")) {
-      suggestions.push(
-        `${mainNumber} KIAS`,
-        `${mainNumber} knots`,
-        `${mainNumber}kts`
-      );
-    }
-    if (value.includes("°c")) {
-      suggestions.push(
-        `${mainNumber}°C`,
-        `${mainNumber} degrees`,
-        `${mainNumber}°`
-      );
-    }
-  }
-
-  return suggestions;
 }
 
 // Calculate string similarity
@@ -449,13 +390,712 @@ function levenshteinDistance(str1, str2) {
   return matrix[str2.length][str1.length];
 }
 
-// Handle real-time input changes
+// Enhanced fill-in mode with random selection and difficulty levels
+function createEnhancedFillInMode() {
+  console.log("Starting enhanced fill-in mode with random selection...");
+
+  const category = limitationsCategories[currentCategory];
+  if (!category) {
+    console.error("No category found:", currentCategory);
+    return;
+  }
+
+  addDifficultySelector();
+
+  const tbody = document.getElementById("table-body");
+  tbody.innerHTML = "";
+
+  const fillItems = selectRandomFillItems(category.data);
+
+  category.data.forEach((item, rowIndex) => {
+    const row = document.createElement("tr");
+    const keys = Object.keys(item);
+
+    keys.forEach((key, colIndex) => {
+      const cell = document.createElement("td");
+
+      const shouldBeFillIn =
+        fillItems.includes(rowIndex) &&
+        (colIndex === keys.length - 1 || (keys.length === 2 && colIndex === 1));
+
+      if (shouldBeFillIn) {
+        const correctValue = item[key];
+        createAdvancedInputCell(cell, correctValue, rowIndex, key);
+        cell.classList.add("fill-mode-cell");
+      } else {
+        cell.textContent = item[key];
+        cell.classList.add("fill-mode-label");
+      }
+
+      row.appendChild(cell);
+    });
+
+    tbody.appendChild(row);
+  });
+
+  addFillModeControls();
+
+  console.log(
+    `Enhanced fill-in mode setup complete! ${fillItems.length} items selected for fill-in.`
+  );
+}
+
+// Select random items for fill-in-the-blank based on difficulty
+function selectRandomFillItems(data) {
+  const totalItems = data.length;
+  let numberOfFills;
+
+  switch (fillModeConfig.difficulty) {
+    case "easy":
+      numberOfFills = Math.ceil(totalItems * 0.3);
+      break;
+    case "medium":
+      numberOfFills = Math.ceil(totalItems * 0.5);
+      break;
+    case "hard":
+      numberOfFills = Math.ceil(totalItems * 0.7);
+      break;
+    case "expert":
+      numberOfFills = Math.ceil(totalItems * 0.9);
+      break;
+    default:
+      numberOfFills = Math.ceil(
+        totalItems * (fillModeConfig.fillPercentage / 100)
+      );
+  }
+
+  if (!fillModeConfig.randomSelection) {
+    return Array.from({ length: numberOfFills }, (_, i) => i);
+  }
+
+  const weights = calculateItemWeights(data);
+  const selectedItems = weightedRandomSelection(
+    totalItems,
+    numberOfFills,
+    weights
+  );
+
+  return selectedItems.sort((a, b) => a - b);
+}
+
+// Calculate weights for items based on difficulty
+function calculateItemWeights(data) {
+  return data.map((item, index) => {
+    const values = Object.values(item);
+    let difficulty = 1;
+
+    values.forEach((value) => {
+      const str = value.toString();
+
+      if (str.includes("°C") || str.includes("°F")) difficulty += 1;
+      if (str.includes("±") || str.includes("+/-")) difficulty += 1;
+      if (str.includes(",")) difficulty += 0.5;
+      if (str.match(/\d+\.\d+/)) difficulty += 0.5;
+      if (str.length > 10) difficulty += 0.5;
+      if (str.includes("ISA")) difficulty += 1;
+    });
+
+    return difficulty;
+  });
+}
+
+// Weighted random selection algorithm
+function weightedRandomSelection(totalItems, numberOfFills, weights) {
+  const selected = new Set();
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+
+  while (selected.size < numberOfFills && selected.size < totalItems) {
+    let random = Math.random() * totalWeight;
+    let weightSum = 0;
+
+    for (let i = 0; i < weights.length; i++) {
+      weightSum += weights[i];
+      if (random <= weightSum && !selected.has(i)) {
+        selected.add(i);
+        break;
+      }
+    }
+
+    if (selected.size < numberOfFills) {
+      const unselected = Array.from({ length: totalItems }, (_, i) => i).filter(
+        (i) => !selected.has(i)
+      );
+      if (unselected.length > 0) {
+        const randomIndex = Math.floor(Math.random() * unselected.length);
+        selected.add(unselected[randomIndex]);
+      }
+    }
+  }
+
+  return Array.from(selected);
+}
+
+// Create advanced input cell with enhanced features
+function createAdvancedInputCell(cell, correctValue, rowIndex, key) {
+  const inputContainer = document.createElement("div");
+  inputContainer.className = "input-container advanced";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "enhanced-input-cell";
+  input.setAttribute("data-correct", correctValue);
+  input.setAttribute("data-index", rowIndex.toString());
+  input.setAttribute("data-field", key);
+  input.setAttribute("data-difficulty", calculateValueDifficulty(correctValue));
+
+  input.placeholder = generateAdvancedPlaceholder(correctValue);
+
+  const datalistId = `suggestions-${rowIndex}-${key}`;
+  input.setAttribute("list", datalistId);
+  const datalist = createSmartDatalist(datalistId, correctValue);
+  document.body.appendChild(datalist);
+
+  let hintLevel = 0;
+  const maxHints = 3;
+
+  input.addEventListener("input", (e) => {
+    handleAdvancedInputChange(e.target);
+
+    if (e.target.value.length <= 1) {
+      hintLevel = 0;
+      e.target.setAttribute("data-hint-level", "0");
+    }
+  });
+
+  input.addEventListener("blur", (e) => {
+    if (fillModeConfig.instantFeedback) {
+      handleInputSubmit(e.target);
+    }
+  });
+
+  input.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      handleInputSubmit(e.target);
+    }
+  });
+
+  input.addEventListener("dblclick", (e) => {
+    if (fillModeConfig.showHints && hintLevel < maxHints) {
+      showProgressiveHint(input, correctValue, hintLevel);
+      hintLevel++;
+      input.setAttribute("data-hint-level", hintLevel.toString());
+    }
+  });
+
+  const actionButtons = document.createElement("div");
+  actionButtons.className = "action-buttons";
+
+  if (fillModeConfig.showHints) {
+    const hintBtn = document.createElement("button");
+    hintBtn.className = "hint-btn advanced";
+    hintBtn.innerHTML = "💡";
+    hintBtn.title = `Hint (${hintLevel}/${maxHints})`;
+    hintBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (hintLevel < maxHints) {
+        showProgressiveHint(input, correctValue, hintLevel);
+        hintLevel++;
+        input.setAttribute("data-hint-level", hintLevel.toString());
+        hintBtn.title = `Hint (${hintLevel}/${maxHints})`;
+
+        if (hintLevel >= maxHints) {
+          hintBtn.style.opacity = "0.3";
+          hintBtn.disabled = true;
+        }
+      }
+    };
+    actionButtons.appendChild(hintBtn);
+  }
+
+  const skipBtn = document.createElement("button");
+  skipBtn.className = "skip-btn";
+  skipBtn.innerHTML = "⏭️";
+  skipBtn.title = "Skip this question";
+  skipBtn.onclick = (e) => {
+    e.stopPropagation();
+    skipQuestion(input, correctValue);
+  };
+  actionButtons.appendChild(skipBtn);
+
+  const indicator = document.createElement("div");
+  indicator.className = "validation-indicator advanced";
+
+  const progressBar = document.createElement("div");
+  progressBar.className = "answer-progress";
+  progressBar.innerHTML = '<div class="progress-fill"></div>';
+
+  inputContainer.appendChild(input);
+  inputContainer.appendChild(actionButtons);
+  inputContainer.appendChild(indicator);
+  inputContainer.appendChild(progressBar);
+
+  cell.appendChild(inputContainer);
+}
+
+// Calculate difficulty of a specific value
+function calculateValueDifficulty(value) {
+  const str = value.toString().toLowerCase();
+  let difficulty = 1;
+
+  if (str.includes("°c") || str.includes("°f")) difficulty += 1;
+  if (str.includes("±") || str.includes("+/-")) difficulty += 1;
+  if (str.includes(",")) difficulty += 0.5;
+  if (str.match(/\d+\.\d+/)) difficulty += 0.5;
+  if (str.length > 10) difficulty += 0.5;
+  if (str.includes("isa")) difficulty += 1;
+
+  return Math.min(difficulty, 3);
+}
+
+// Generate advanced placeholder with contextual information
+function generateAdvancedPlaceholder(correctValue) {
+  const value = correctValue.toLowerCase();
+  const difficulty = calculateValueDifficulty(correctValue);
+
+  let basePlaceholder = "";
+
+  if (value.includes("kias") || value.includes("knots")) {
+    basePlaceholder = "Enter speed";
+  } else if (value.includes("°c")) {
+    basePlaceholder = "Enter temperature";
+  } else if (value.includes("lbs")) {
+    basePlaceholder = "Enter weight";
+  } else if (value.includes("ft")) {
+    basePlaceholder = "Enter altitude/distance";
+  } else if (value.includes("%")) {
+    basePlaceholder = "Enter percentage";
+  } else if (value.includes("gal")) {
+    basePlaceholder = "Enter volume";
+  } else if (value.includes("psi")) {
+    basePlaceholder = "Enter pressure";
+  } else {
+    basePlaceholder = "Enter value";
+  }
+
+  const difficultyStars = "★".repeat(Math.floor(difficulty));
+  return `${basePlaceholder} ${difficultyStars}`;
+}
+
+// Create smart datalist with intelligent suggestions
+function createSmartDatalist(datalistId, correctValue) {
+  const datalist = document.createElement("datalist");
+  datalist.id = datalistId;
+
+  const suggestions = generateSuggestions(correctValue);
+  const additionalSuggestions = generateContextualSuggestions(correctValue);
+
+  [...suggestions, ...additionalSuggestions].forEach((suggestion) => {
+    const option = document.createElement("option");
+    option.value = suggestion;
+    datalist.appendChild(option);
+  });
+
+  return datalist;
+}
+
+// Generate helpful placeholder text
+function generateSuggestions(correctValue) {
+  const suggestions = [];
+  const value = correctValue.toLowerCase();
+
+  const numbers = correctValue.match(/\d+/g);
+  if (numbers) {
+    const mainNumber = numbers[0];
+
+    if (value.includes("ft")) {
+      suggestions.push(
+        `${mainNumber} ft`,
+        `${mainNumber} feet`,
+        `${mainNumber}ft`
+      );
+    }
+    if (value.includes("lbs")) {
+      suggestions.push(
+        `${mainNumber} lbs`,
+        `${mainNumber} pounds`,
+        `${mainNumber}lbs`
+      );
+    }
+    if (value.includes("kias")) {
+      suggestions.push(
+        `${mainNumber} KIAS`,
+        `${mainNumber} knots`,
+        `${mainNumber}kts`
+      );
+    }
+    if (value.includes("°c")) {
+      suggestions.push(
+        `${mainNumber}°C`,
+        `${mainNumber} degrees`,
+        `${mainNumber}°`
+      );
+    }
+  }
+
+  return suggestions;
+}
+
+// Generate contextual suggestions based on other values in the dataset
+function generateContextualSuggestions(correctValue) {
+  const suggestions = [];
+  const category = limitationsCategories[currentCategory];
+
+  category.data.forEach((item) => {
+    Object.values(item).forEach((value) => {
+      const str = value.toString();
+
+      if (str !== correctValue && str.length > 2) {
+        if (correctValue.includes("ft") && str.includes("ft")) {
+          const number = str.match(/\d+/)?.[0];
+          if (number) suggestions.push(`${number} ft`);
+        }
+        if (correctValue.includes("°C") && str.includes("°C")) {
+          const number = str.match(/-?\d+/)?.[0];
+          if (number) suggestions.push(`${number}°C`);
+        }
+      }
+    });
+  });
+
+  return [...new Set(suggestions)].slice(0, 5);
+}
+
+// Advanced input change handler with progressive feedback
+function handleAdvancedInputChange(input) {
+  const userAnswer = input.value;
+  const correctAnswer = input.getAttribute("data-correct");
+  const indicator = input.parentElement.querySelector(".validation-indicator");
+  const progressBar = input.parentElement.querySelector(
+    ".answer-progress .progress-fill"
+  );
+
+  if (!indicator || !progressBar) return;
+
+  if (userAnswer.length === 0) {
+    indicator.className = "validation-indicator advanced";
+    indicator.innerHTML = "";
+    progressBar.style.width = "0%";
+    return;
+  }
+
+  const similarity = calculateSimilarity(
+    userAnswer.toLowerCase(),
+    correctAnswer.toLowerCase()
+  );
+  const result = smartAnswerCheck(userAnswer, correctAnswer);
+
+  progressBar.style.width = similarity * 100 + "%";
+
+  if (result.isCorrect) {
+    if (result.score === 100) {
+      indicator.className = "validation-indicator advanced perfect";
+      indicator.innerHTML = "✓";
+      progressBar.style.backgroundColor = "#00ff41";
+    } else if (result.score >= 90) {
+      indicator.className = "validation-indicator advanced good";
+      indicator.innerHTML = "✓";
+      progressBar.style.backgroundColor = "#66ff66";
+    } else {
+      indicator.className = "validation-indicator advanced close";
+      indicator.innerHTML = "~";
+      progressBar.style.backgroundColor = "#ffaa00";
+    }
+  } else {
+    if (similarity > 0.7) {
+      indicator.className = "validation-indicator advanced close";
+      indicator.innerHTML = "~";
+      progressBar.style.backgroundColor = "#ffaa00";
+    } else if (similarity > 0.4) {
+      indicator.className = "validation-indicator advanced partial";
+      indicator.innerHTML = "?";
+      progressBar.style.backgroundColor = "#ffff00";
+    } else if (userAnswer.length > 2) {
+      indicator.className = "validation-indicator advanced wrong";
+      indicator.innerHTML = "✗";
+      progressBar.style.backgroundColor = "#ff0000";
+    } else {
+      indicator.className = "validation-indicator advanced";
+      indicator.innerHTML = "";
+      progressBar.style.backgroundColor = "rgba(0, 255, 65, 0.3)";
+    }
+  }
+}
+
+// Progressive hint system with increasing levels of help
+function showProgressiveHint(input, correctValue, hintLevel) {
+  const hints = generateProgressiveHints(correctValue, hintLevel);
+
+  if (hints.length === 0) return;
+
+  const hintPopup = document.createElement("div");
+  hintPopup.className = "hint-popup advanced";
+
+  const hintContent = `
+    <div class="hint-content">
+      <div class="hint-title">Hint ${hintLevel + 1}/3</div>
+      <div class="hint-text">${hints[0]}</div>
+      <div class="hint-progress">
+        <div class="hint-dots">
+          ${"●".repeat(hintLevel + 1)}${"○".repeat(2 - hintLevel)}
+        </div>
+      </div>
+      <button class="hint-close" onclick="this.parentElement.parentElement.remove()">Got it!</button>
+    </div>
+  `;
+
+  hintPopup.innerHTML = hintContent;
+  document.body.appendChild(hintPopup);
+
+  const rect = input.getBoundingClientRect();
+  hintPopup.style.position = "fixed";
+  hintPopup.style.top = rect.bottom + 5 + "px";
+  hintPopup.style.left = rect.left + "px";
+  hintPopup.style.zIndex = "1000";
+
+  setTimeout(() => {
+    if (hintPopup.parentElement) {
+      hintPopup.remove();
+    }
+  }, 8000);
+}
+
+// Generate progressive hints that get more specific
+function generateProgressiveHints(correctValue, hintLevel) {
+  const hints = [];
+  const value = correctValue.toLowerCase();
+
+  if (hintLevel === 0) {
+    if (value.includes("ft") || value.includes("feet")) {
+      hints.push("This is a measurement of distance or altitude.");
+    } else if (value.includes("lbs") || value.includes("pounds")) {
+      hints.push("This is a weight measurement.");
+    } else if (value.includes("°c") || value.includes("temperature")) {
+      hints.push("This is a temperature measurement.");
+    } else if (value.includes("kias") || value.includes("knots")) {
+      hints.push("This is a speed measurement.");
+    } else if (value.includes("%")) {
+      hints.push("This is a percentage value.");
+    } else {
+      hints.push("Think about what type of measurement this might be.");
+    }
+  } else if (hintLevel === 1) {
+    const numbers = correctValue.match(/\d+/g);
+    if (numbers && numbers.length > 0) {
+      const mainNumber = parseInt(numbers[0]);
+      if (mainNumber < 100) {
+        hints.push("The number is less than 100.");
+      } else if (mainNumber < 1000) {
+        hints.push("The number is between 100 and 1,000.");
+      } else if (mainNumber < 10000) {
+        hints.push("The number is between 1,000 and 10,000.");
+      } else {
+        hints.push("The number is greater than 10,000.");
+      }
+    } else {
+      hints.push("Think about the typical range for this type of measurement.");
+    }
+  } else if (hintLevel === 2) {
+    if (correctValue.length > 3) {
+      const firstPart = correctValue.substring(
+        0,
+        Math.ceil(correctValue.length * 0.4)
+      );
+      const lastPart = correctValue.substring(
+        Math.floor(correctValue.length * 0.7)
+      );
+      hints.push(
+        `The answer starts with "${firstPart}" and ends with "${lastPart}"`
+      );
+    } else {
+      hints.push(`The answer is: ${correctValue}`);
+    }
+  }
+
+  return hints;
+}
+
+// Skip question functionality
+function skipQuestion(input, correctValue) {
+  const cell = input.closest("td");
+
+  cell.classList.add("skipped");
+
+  const feedback = document.createElement("div");
+  feedback.className = "answer-feedback skipped";
+  feedback.innerHTML = `
+    <div class="skipped-label">SKIPPED</div>
+    <div class="correct-answer">Answer: ${correctValue}</div>
+  `;
+
+  input.style.display = "none";
+  input.parentElement.appendChild(feedback);
+
+  updateProgress();
+}
+
+// Add difficulty selector to the UI
+function addDifficultySelector() {
+  const existingSelector = document.getElementById("difficulty-selector");
+  if (existingSelector) return;
+
+  const controls = document.querySelector(".controls");
+  const difficultyContainer = document.createElement("div");
+  difficultyContainer.className = "difficulty-container";
+  difficultyContainer.innerHTML = `
+    <label for="difficulty-select" style="color: #00ff41; margin-right: 10px; font-family: 'JetBrains Mono', monospace;">Difficulty:</label>
+    <select id="difficulty-select" onchange="changeDifficulty()">
+      <option value="easy">Easy (30%)</option>
+      <option value="medium" selected>Medium (50%)</option>
+      <option value="hard">Hard (70%)</option>
+      <option value="expert">Expert (90%)</option>
+    </select>
+  `;
+
+  controls.appendChild(difficultyContainer);
+}
+
+// Add fill mode controls
+function addFillModeControls() {
+  const existingControls = document.getElementById("fill-mode-controls");
+  if (existingControls) return;
+
+  const container = document.querySelector(".container");
+  const controlsPanel = document.createElement("div");
+  controlsPanel.id = "fill-mode-controls";
+  controlsPanel.className = "fill-mode-controls";
+  controlsPanel.innerHTML = `
+    <div class="fill-controls-row">
+      <label>
+        <input type="checkbox" id="random-selection" ${
+          fillModeConfig.randomSelection ? "checked" : ""
+        } onchange="toggleRandomSelection()">
+        Random Selection
+      </label>
+      <label>
+        <input type="checkbox" id="show-hints" ${
+          fillModeConfig.showHints ? "checked" : ""
+        } onchange="toggleHints()">
+        Show Hints
+      </label>
+      <label>
+        <input type="checkbox" id="instant-feedback" ${
+          fillModeConfig.instantFeedback ? "checked" : ""
+        } onchange="toggleInstantFeedback()">
+        Instant Feedback
+      </label>
+      <button onclick="regenerateFillMode()" class="btn regenerate-btn">🎲 Regenerate</button>
+    </div>
+  `;
+
+  const timerElement = document.getElementById("timer");
+  container.insertBefore(controlsPanel, timerElement);
+}
+
+// Control functions
+function changeDifficulty() {
+  const select = document.getElementById("difficulty-select");
+  fillModeConfig.difficulty = select.value;
+  if (currentMode === "fill") {
+    createEnhancedFillInMode();
+  }
+}
+
+function toggleRandomSelection() {
+  fillModeConfig.randomSelection =
+    document.getElementById("random-selection").checked;
+  if (currentMode === "fill") {
+    createEnhancedFillInMode();
+  }
+}
+
+function toggleHints() {
+  fillModeConfig.showHints = document.getElementById("show-hints").checked;
+}
+
+function toggleInstantFeedback() {
+  fillModeConfig.instantFeedback =
+    document.getElementById("instant-feedback").checked;
+}
+
+function regenerateFillMode() {
+  if (currentMode === "fill") {
+    resetProgress();
+    createEnhancedFillInMode();
+  }
+}
+
+// Clean up fill mode controls when switching modes
+function cleanupFillModeControls() {
+  const fillControls = document.getElementById("fill-mode-controls");
+  const difficultyContainer = document.querySelector(".difficulty-container");
+
+  if (fillControls) fillControls.remove();
+  if (difficultyContainer) difficultyContainer.remove();
+}
+
+// Show helpful tooltips on first visit to fill mode
+function showFillModeHelp() {
+  if (hasShownFillModeHelp) return;
+  hasShownFillModeHelp = true;
+
+  const helpPopup = document.createElement("div");
+  helpPopup.className = "help-popup";
+  helpPopup.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.95);
+      border: 2px solid #00ff41;
+      padding: 20px;
+      max-width: 400px;
+      z-index: 2000;
+      font-family: 'JetBrains Mono', monospace;
+      color: #00ff41;
+    ">
+      <h3 style="margin-bottom: 15px; color: #ffffff;">🚀 Enhanced Fill-in Mode</h3>
+      <div style="font-size: 0.85rem; line-height: 1.4; margin-bottom: 15px;">
+        <p><strong>💡 Hints:</strong> Click the hint button or press Ctrl+H</p>
+        <p><strong>⏭️ Skip:</strong> Click skip button or press Ctrl+S</p>
+        <p><strong>⌨️ Navigation:</strong> Use Tab/Shift+Tab to move between fields</p>
+        <p><strong>🎯 Difficulty:</strong> Adjust difficulty to change how many questions appear</p>
+        <p><strong>🎲 Regenerate:</strong> Get a new random selection of questions</p>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" style="
+        background: rgba(0, 255, 65, 0.1);
+        border: 1px solid #00ff41;
+        color: #00ff41;
+        padding: 8px 16px;
+        cursor: pointer;
+        font-family: 'JetBrains Mono', monospace;
+        width: 100%;
+      ">Got it!</button>
+    </div>
+  `;
+
+  document.body.appendChild(helpPopup);
+
+  setTimeout(() => {
+    if (helpPopup.parentElement) {
+      helpPopup.remove();
+    }
+  }, 10000);
+}
+
+// Enhanced fill-in mode with help
+function createEnhancedFillInModeWithHelp() {
+  createEnhancedFillInMode();
+  setTimeout(showFillModeHelp, 1000);
+}
+
+// Handle real-time input changes (original function for compatibility)
 function handleInputChange(input) {
   const userAnswer = input.value;
   const correctAnswer = input.getAttribute("data-correct");
   const indicator = input.parentElement.querySelector(".validation-indicator");
 
-  if (!indicator) return; // Safety check
+  if (!indicator) return;
 
   if (userAnswer.length === 0) {
     indicator.className = "validation-indicator";
@@ -477,7 +1117,6 @@ function handleInputChange(input) {
       indicator.innerHTML = "~";
     }
   } else {
-    // Show partial feedback
     if (userAnswer.length > 2) {
       const similarity = calculateSimilarity(userAnswer, correctAnswer);
       if (similarity > 0.5) {
@@ -504,7 +1143,6 @@ function handleInputSubmit(input) {
 
   const result = smartAnswerCheck(userAnswer, correctAnswer);
 
-  // Remove any existing feedback
   const existingFeedback = cell.querySelector(".answer-feedback");
   if (existingFeedback) {
     existingFeedback.remove();
@@ -514,7 +1152,6 @@ function handleInputSubmit(input) {
     cell.classList.add("correct");
     cell.classList.remove("incorrect", "partial");
 
-    // Show the correct answer and score
     const feedback = document.createElement("div");
     feedback.className = "answer-feedback";
     feedback.innerHTML = `
@@ -528,7 +1165,6 @@ function handleInputSubmit(input) {
     correctCount++;
     streakCount++;
 
-    // Bonus points for perfect answers
     if (result.score === 100) {
       showBonusAnimation(cell);
     }
@@ -536,7 +1172,6 @@ function handleInputSubmit(input) {
     cell.classList.add("incorrect");
     cell.classList.remove("correct", "partial");
 
-    // Show what they entered vs correct answer
     const feedback = document.createElement("div");
     feedback.className = "answer-feedback incorrect";
     feedback.innerHTML = `
@@ -556,90 +1191,6 @@ function handleInputSubmit(input) {
   saveProgress();
 }
 
-// Generate progressive hints
-function generateHints(correctValue) {
-  const hints = [];
-  const value = correctValue.toLowerCase();
-
-  // First hint: general category
-  if (value.includes("ft") || value.includes("feet")) {
-    hints.push("This is a measurement of distance or altitude.");
-  } else if (value.includes("lbs") || value.includes("pounds")) {
-    hints.push("This is a weight measurement.");
-  } else if (value.includes("°c") || value.includes("temperature")) {
-    hints.push("This is a temperature measurement.");
-  } else if (value.includes("kias") || value.includes("knots")) {
-    hints.push("This is a speed measurement.");
-  } else if (value.includes("%")) {
-    hints.push("This is a percentage value.");
-  } else {
-    hints.push("Think about the units this measurement would use.");
-  }
-
-  // Second hint: number range
-  const numbers = correctValue.match(/\d+/g);
-  if (numbers && numbers.length > 0) {
-    const mainNumber = parseInt(numbers[0]);
-    if (mainNumber < 100) {
-      hints.push("The number is less than 100.");
-    } else if (mainNumber < 1000) {
-      hints.push("The number is between 100 and 1,000.");
-    } else if (mainNumber < 10000) {
-      hints.push("The number is between 1,000 and 10,000.");
-    } else {
-      hints.push("The number is greater than 10,000.");
-    }
-  }
-
-  // Third hint: partial reveal
-  if (correctValue.length > 3) {
-    const masked =
-      correctValue.substring(0, 2) +
-      "..." +
-      correctValue.substring(correctValue.length - 2);
-    hints.push(`The answer starts and ends like this: ${masked}`);
-  }
-
-  return hints;
-}
-
-// Show hint for difficult questions
-function showHint(input, correctValue) {
-  const hints = generateHints(correctValue);
-  const hintLevel = parseInt(input.getAttribute("data-hint-level") || "0");
-  const hintIndex = Math.min(hintLevel, hints.length - 1);
-
-  // Create hint popup
-  const hintPopup = document.createElement("div");
-  hintPopup.className = "hint-popup";
-  hintPopup.innerHTML = `
-    <div class="hint-content">
-      <div class="hint-title">Hint ${hintIndex + 1}:</div>
-      <div class="hint-text">${hints[hintIndex]}</div>
-      <button class="hint-close" onclick="this.parentElement.parentElement.remove()">Got it!</button>
-    </div>
-  `;
-
-  document.body.appendChild(hintPopup);
-
-  // Position hint near input
-  const rect = input.getBoundingClientRect();
-  hintPopup.style.position = "fixed";
-  hintPopup.style.top = rect.bottom + 5 + "px";
-  hintPopup.style.left = rect.left + "px";
-  hintPopup.style.zIndex = "1000";
-
-  // Increment hint level
-  input.setAttribute("data-hint-level", (hintLevel + 1).toString());
-
-  // Auto-close after 5 seconds
-  setTimeout(() => {
-    if (hintPopup.parentElement) {
-      hintPopup.remove();
-    }
-  }, 5000);
-}
-
 // Show bonus animation for perfect answers
 function showBonusAnimation(cell) {
   const bonus = document.createElement("div");
@@ -650,118 +1201,6 @@ function showBonusAnimation(cell) {
   setTimeout(() => {
     bonus.remove();
   }, 2000);
-}
-
-// Enhanced fill-in mode with multiple input types
-function createEnhancedFillInMode() {
-  console.log("Starting enhanced fill-in mode...");
-
-  // Get the current category data
-  const category = limitationsCategories[currentCategory];
-  if (!category) {
-    console.error("No category found:", currentCategory);
-    return;
-  }
-
-  console.log("Category data:", category);
-
-  // Clear existing table and rebuild for fill mode
-  const tbody = document.getElementById("table-body");
-  tbody.innerHTML = "";
-
-  // Rebuild table with input fields
-  category.data.forEach((item, rowIndex) => {
-    const row = document.createElement("tr");
-    const keys = Object.keys(item);
-
-    keys.forEach((key, colIndex) => {
-      const cell = document.createElement("td");
-
-      // First column(s) show the question/label, last column(s) get input fields
-      if (
-        colIndex === keys.length - 1 ||
-        (keys.length === 2 && colIndex === 1)
-      ) {
-        // This is the answer cell - create input
-        const correctValue = item[key];
-
-        // Create input container
-        const inputContainer = document.createElement("div");
-        inputContainer.className = "input-container";
-
-        // Create enhanced text input
-        const input = document.createElement("input");
-        input.type = "text";
-        input.className = "enhanced-input-cell";
-        input.setAttribute("data-correct", correctValue);
-        input.setAttribute("data-index", rowIndex.toString());
-        input.setAttribute("data-field", key);
-
-        // Set placeholder with hints
-        input.placeholder = generatePlaceholder(correctValue);
-
-        // Add autocomplete suggestions
-        input.setAttribute("list", `suggestions-${rowIndex}-${key}`);
-        const datalist = document.createElement("datalist");
-        datalist.id = `suggestions-${rowIndex}-${key}`;
-
-        const suggestions = generateSuggestions(correctValue);
-        suggestions.forEach((suggestion) => {
-          const option = document.createElement("option");
-          option.value = suggestion;
-          datalist.appendChild(option);
-        });
-
-        document.body.appendChild(datalist);
-
-        // Enhanced event handlers
-        input.addEventListener("input", (e) => {
-          handleInputChange(e.target);
-        });
-
-        input.addEventListener("blur", (e) => {
-          handleInputSubmit(e.target);
-        });
-
-        input.addEventListener("keypress", (e) => {
-          if (e.key === "Enter") {
-            handleInputSubmit(e.target);
-          }
-        });
-
-        // Add hint button
-        const hintBtn = document.createElement("button");
-        hintBtn.className = "hint-btn";
-        hintBtn.innerHTML = "💡";
-        hintBtn.title = "Get a hint";
-        hintBtn.onclick = (e) => {
-          e.stopPropagation();
-          showHint(input, correctValue);
-        };
-
-        // Add validation indicator
-        const indicator = document.createElement("div");
-        indicator.className = "validation-indicator";
-
-        inputContainer.appendChild(input);
-        inputContainer.appendChild(hintBtn);
-        inputContainer.appendChild(indicator);
-
-        cell.appendChild(inputContainer);
-        cell.classList.add("fill-mode-cell");
-      } else {
-        // This is a label cell - show the question/prompt
-        cell.textContent = item[key];
-        cell.classList.add("fill-mode-label");
-      }
-
-      row.appendChild(cell);
-    });
-
-    tbody.appendChild(row);
-  });
-
-  console.log("Enhanced fill-in mode setup complete!");
 }
 
 function init() {
@@ -993,13 +1432,15 @@ function hideRandomCells() {
 function setMode(mode) {
   currentMode = mode;
 
-  // Clear any existing timers
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
   }
 
-  // Update active button
+  if (mode !== "fill") {
+    cleanupFillModeControls();
+  }
+
   document
     .querySelectorAll(".btn")
     .forEach((btn) => btn.classList.remove("active"));
@@ -1010,7 +1451,6 @@ function setMode(mode) {
     }
   });
 
-  // Handle timer mode
   if (mode === "timer") {
     startTimer();
     document.getElementById("timer").style.display = "block";
@@ -1018,12 +1458,10 @@ function setMode(mode) {
     document.getElementById("timer").style.display = "none";
   }
 
-  // Call the appropriate mode function
   if (mode === "fill") {
-    console.log("Setting fill mode...");
-    createEnhancedFillInMode();
+    console.log("Setting enhanced fill mode...");
+    createEnhancedFillInModeWithHelp();
   } else {
-    // For other modes, use the regular table population
     populateTable();
   }
 
@@ -1068,7 +1506,7 @@ function updateProgress() {
       ".limitation-cell, .fill-mode-cell"
     ).length;
     completedCells = document.querySelectorAll(
-      ".limitation-cell.correct, .limitation-cell.incorrect, .fill-mode-cell.correct, .fill-mode-cell.incorrect"
+      ".limitation-cell.correct, .limitation-cell.incorrect, .fill-mode-cell.correct, .fill-mode-cell.incorrect, .fill-mode-cell.skipped"
     ).length;
   }
 
@@ -1086,25 +1524,143 @@ function resetProgress() {
   saveProgress();
 }
 
-function saveProgress() {
+function trackPerformance(wasCorrect, hintsUsed, timeSpent) {
+  performanceTracker.totalAttempts++;
+  if (wasCorrect) performanceTracker.correctAnswers++;
+
+  performanceTracker.averageHintsUsed =
+    (performanceTracker.averageHintsUsed *
+      (performanceTracker.totalAttempts - 1) +
+      hintsUsed) /
+    performanceTracker.totalAttempts;
+
+  performanceTracker.averageTimePerQuestion =
+    (performanceTracker.averageTimePerQuestion *
+      (performanceTracker.totalAttempts - 1) +
+      timeSpent) /
+    performanceTracker.totalAttempts;
+}
+
+function enhancedSaveProgress() {
   savedProgress = {
     correctCount,
     incorrectCount,
     streakCount,
     mode: currentMode,
     category: currentCategory,
+    fillModeConfig: fillModeConfig,
+    performanceTracker: performanceTracker,
+    hasShownFillModeHelp: hasShownFillModeHelp,
   };
+
+  try {
+    localStorage.setItem(
+      "aircraftLimitsProgress",
+      JSON.stringify(savedProgress)
+    );
+  } catch (e) {
+    console.log("localStorage not available, using memory storage");
+  }
+}
+
+function enhancedLoadProgress() {
+  try {
+    const saved = localStorage.getItem("aircraftLimitsProgress");
+    if (saved) {
+      const parsedProgress = JSON.parse(saved);
+
+      correctCount = parsedProgress.correctCount || 0;
+      incorrectCount = parsedProgress.incorrectCount || 0;
+      streakCount = parsedProgress.streakCount || 0;
+      currentCategory = parsedProgress.category || "Structural Limitations";
+
+      if (parsedProgress.fillModeConfig) {
+        fillModeConfig = {
+          ...fillModeConfig,
+          ...parsedProgress.fillModeConfig,
+        };
+      }
+
+      if (parsedProgress.performanceTracker) {
+        performanceTracker = {
+          ...performanceTracker,
+          ...parsedProgress.performanceTracker,
+        };
+      }
+
+      hasShownFillModeHelp = parsedProgress.hasShownFillModeHelp || false;
+
+      document.getElementById("category-select").value = currentCategory;
+      updateStats();
+    }
+  } catch (e) {
+    console.log("Could not load progress from localStorage");
+    if (savedProgress) {
+      correctCount = savedProgress.correctCount || 0;
+      incorrectCount = savedProgress.incorrectCount || 0;
+      streakCount = savedProgress.streakCount || 0;
+      currentCategory = savedProgress.category || "Structural Limitations";
+      document.getElementById("category-select").value = currentCategory;
+      updateStats();
+    }
+  }
+}
+
+function saveProgress() {
+  enhancedSaveProgress();
 }
 
 function loadProgress() {
-  if (savedProgress) {
-    correctCount = savedProgress.correctCount || 0;
-    incorrectCount = savedProgress.incorrectCount || 0;
-    streakCount = savedProgress.streakCount || 0;
-    currentCategory = savedProgress.category || "Structural Limitations";
-    document.getElementById("category-select").value = currentCategory;
-    updateStats();
-  }
+  enhancedLoadProgress();
 }
+
+// Add keyboard shortcuts for better UX
+document.addEventListener("keydown", (e) => {
+  if (currentMode !== "fill") return;
+
+  const activeInput = document.activeElement;
+  if (!activeInput || !activeInput.classList.contains("enhanced-input-cell"))
+    return;
+
+  if ((e.ctrlKey || e.metaKey) && e.key === "h") {
+    e.preventDefault();
+    const hintBtn = activeInput.parentElement.querySelector(".hint-btn");
+    if (hintBtn && !hintBtn.disabled) {
+      hintBtn.click();
+    }
+  }
+
+  if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+    e.preventDefault();
+    const skipBtn = activeInput.parentElement.querySelector(".skip-btn");
+    if (skipBtn) {
+      skipBtn.click();
+    }
+  }
+
+  if (e.key === "Tab" && !e.shiftKey) {
+    e.preventDefault();
+    const allInputs = Array.from(
+      document.querySelectorAll(".enhanced-input-cell")
+    );
+    const currentIndex = allInputs.indexOf(activeInput);
+    const nextInput = allInputs[currentIndex + 1];
+    if (nextInput) {
+      nextInput.focus();
+    }
+  }
+
+  if (e.key === "Tab" && e.shiftKey) {
+    e.preventDefault();
+    const allInputs = Array.from(
+      document.querySelectorAll(".enhanced-input-cell")
+    );
+    const currentIndex = allInputs.indexOf(activeInput);
+    const prevInput = allInputs[currentIndex - 1];
+    if (prevInput) {
+      prevInput.focus();
+    }
+  }
+});
 
 document.addEventListener("DOMContentLoaded", init);
