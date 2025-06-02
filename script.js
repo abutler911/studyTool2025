@@ -1,3 +1,103 @@
+// Enhanced progressive hints for structural limitations
+function generateProgressiveHints(correctValue, hintLevel) {
+  const hints = [];
+  const value = correctValue.toLowerCase();
+
+  // Level 0: Category hint with structural limitations context
+  if (hintLevel === 0) {
+    if (currentCategory === "Structural Limitations") {
+      if (value.includes("lbs")) {
+        if (value.includes("85,")) {
+          hints.push(
+            "This is one of the maximum weight limits - likely takeoff or ramp weight."
+          );
+        } else if (value.includes("74,")) {
+          hints.push("This is the maximum landing weight for the aircraft.");
+        } else if (value.includes("69,")) {
+          hints.push("This is the maximum zero fuel weight.");
+        } else {
+          hints.push("This is a weight measurement in pounds.");
+        }
+      } else if (value.includes("gal")) {
+        hints.push("This is the fuel capacity measurement.");
+      } else {
+        hints.push("This is a structural limitation value.");
+      }
+    }
+    // Original category hints for other types
+    else if (value.includes("ft") || value.includes("feet")) {
+      hints.push("This is a measurement of distance or altitude.");
+    } else if (value.includes("lbs") || value.includes("pounds")) {
+      hints.push("This is a weight measurement.");
+    } else if (value.includes("°c") || value.includes("temperature")) {
+      hints.push("This is a temperature measurement.");
+    } else if (value.includes("kias") || value.includes("knots")) {
+      hints.push("This is a speed measurement.");
+    } else if (value.includes("%")) {
+      hints.push("This is a percentage value.");
+    } else {
+      hints.push("Think about what type of measurement this might be.");
+    }
+  }
+
+  // Level 1: Range hint with more specific context
+  else if (hintLevel === 1) {
+    const numbers = correctValue.match(/\d+/g);
+    if (numbers && numbers.length > 0) {
+      const mainNumber = parseInt(numbers[0]);
+
+      if (
+        currentCategory === "Structural Limitations" &&
+        correctValue.includes("lbs")
+      ) {
+        if (mainNumber >= 80000) {
+          hints.push(
+            "This weight is over 80,000 lbs - a maximum operational weight."
+          );
+        } else if (mainNumber >= 70000) {
+          hints.push(
+            "This weight is in the 70,000s - likely a landing or zero fuel weight."
+          );
+        } else {
+          hints.push("This is a significant aircraft weight measurement.");
+        }
+      } else {
+        // Original range hints
+        if (mainNumber < 100) {
+          hints.push("The number is less than 100.");
+        } else if (mainNumber < 1000) {
+          hints.push("The number is between 100 and 1,000.");
+        } else if (mainNumber < 10000) {
+          hints.push("The number is between 1,000 and 10,000.");
+        } else {
+          hints.push("The number is greater than 10,000.");
+        }
+      }
+    } else {
+      hints.push("Think about the typical range for this type of measurement.");
+    }
+  }
+
+  // Level 2: Partial reveal
+  else if (hintLevel === 2) {
+    if (correctValue.length > 3) {
+      const firstPart = correctValue.substring(
+        0,
+        Math.ceil(correctValue.length * 0.4)
+      );
+      const lastPart = correctValue.substring(
+        Math.floor(correctValue.length * 0.7)
+      );
+      hints.push(
+        `The answer starts with "${firstPart}" and ends with "${lastPart}"`
+      );
+    } else {
+      hints.push(`The answer is: ${correctValue}`);
+    }
+  }
+
+  return hints;
+}
 const limitationsCategories = {
   "Structural Limitations": {
     columns: ["Structure", "ERJ175LL", "ERJ175LR"],
@@ -390,9 +490,9 @@ function levenshteinDistance(str1, str2) {
   return matrix[str2.length][str1.length];
 }
 
-// Enhanced fill-in mode with random selection and difficulty levels
+// Enhanced fill-in mode with multi-column support for all data values
 function createEnhancedFillInMode() {
-  console.log("Starting enhanced fill-in mode with random selection...");
+  console.log("Starting enhanced fill-in mode with multi-column support...");
 
   const category = limitationsCategories[currentCategory];
   if (!category) {
@@ -405,7 +505,8 @@ function createEnhancedFillInMode() {
   const tbody = document.getElementById("table-body");
   tbody.innerHTML = "";
 
-  const fillItems = selectRandomFillItems(category.data);
+  // For multi-column data like Structural Limitations, get all possible fill targets
+  const fillTargets = selectRandomFillTargets(category);
 
   category.data.forEach((item, rowIndex) => {
     const row = document.createElement("tr");
@@ -414,9 +515,9 @@ function createEnhancedFillInMode() {
     keys.forEach((key, colIndex) => {
       const cell = document.createElement("td");
 
-      const shouldBeFillIn =
-        fillItems.includes(rowIndex) &&
-        (colIndex === keys.length - 1 || (keys.length === 2 && colIndex === 1));
+      // Check if this specific cell should be a fill-in target
+      const cellId = `${rowIndex}-${colIndex}`;
+      const shouldBeFillIn = fillTargets.includes(cellId);
 
       if (shouldBeFillIn) {
         const correctValue = item[key];
@@ -436,46 +537,127 @@ function createEnhancedFillInMode() {
   addFillModeControls();
 
   console.log(
-    `Enhanced fill-in mode setup complete! ${fillItems.length} items selected for fill-in.`
+    `Enhanced fill-in mode setup complete! ${fillTargets.length} cells selected for fill-in.`
   );
 }
 
-// Select random items for fill-in-the-blank based on difficulty
-function selectRandomFillItems(data) {
-  const totalItems = data.length;
+// Select random cells for fill-in-the-blank based on difficulty and data structure
+function selectRandomFillTargets(category) {
+  const allPossibleTargets = [];
+
+  // Analyze the category structure to determine which cells can be fill-in targets
+  category.data.forEach((item, rowIndex) => {
+    const keys = Object.keys(item);
+
+    // For categories like "Structural Limitations" with multiple data columns
+    if (currentCategory === "Structural Limitations") {
+      // Skip the first column (structure name), make ERJ175LL and ERJ175LR columns available
+      keys.forEach((key, colIndex) => {
+        if (colIndex > 0) {
+          // Skip first column (structure names)
+          allPossibleTargets.push({
+            cellId: `${rowIndex}-${colIndex}`,
+            rowIndex,
+            colIndex,
+            key,
+            value: item[key],
+            difficulty: calculateValueDifficulty(item[key]),
+          });
+        }
+      });
+    }
+    // For other categories, use the original logic (last column only)
+    else {
+      keys.forEach((key, colIndex) => {
+        if (
+          colIndex === keys.length - 1 ||
+          (keys.length === 2 && colIndex === 1)
+        ) {
+          allPossibleTargets.push({
+            cellId: `${rowIndex}-${colIndex}`,
+            rowIndex,
+            colIndex,
+            key,
+            value: item[key],
+            difficulty: calculateValueDifficulty(item[key]),
+          });
+        }
+      });
+    }
+  });
+
+  // Determine how many targets to select based on difficulty
+  const totalTargets = allPossibleTargets.length;
   let numberOfFills;
 
   switch (fillModeConfig.difficulty) {
     case "easy":
-      numberOfFills = Math.ceil(totalItems * 0.3);
+      numberOfFills = Math.ceil(totalTargets * 0.3);
       break;
     case "medium":
-      numberOfFills = Math.ceil(totalItems * 0.5);
+      numberOfFills = Math.ceil(totalTargets * 0.5);
       break;
     case "hard":
-      numberOfFills = Math.ceil(totalItems * 0.7);
+      numberOfFills = Math.ceil(totalTargets * 0.7);
       break;
     case "expert":
-      numberOfFills = Math.ceil(totalItems * 0.9);
+      numberOfFills = Math.ceil(totalTargets * 0.9);
       break;
     default:
       numberOfFills = Math.ceil(
-        totalItems * (fillModeConfig.fillPercentage / 100)
+        totalTargets * (fillModeConfig.fillPercentage / 100)
       );
   }
 
+  // Select targets
+  let selectedTargets;
+
   if (!fillModeConfig.randomSelection) {
-    return Array.from({ length: numberOfFills }, (_, i) => i);
+    // Sequential selection
+    selectedTargets = allPossibleTargets.slice(0, numberOfFills);
+  } else {
+    // Weighted random selection
+    selectedTargets = weightedRandomSelectionFromTargets(
+      allPossibleTargets,
+      numberOfFills
+    );
   }
 
-  const weights = calculateItemWeights(data);
-  const selectedItems = weightedRandomSelection(
-    totalItems,
-    numberOfFills,
-    weights
-  );
+  // Return just the cell IDs
+  return selectedTargets.map((target) => target.cellId);
+}
 
-  return selectedItems.sort((a, b) => a - b);
+// Weighted random selection for multi-column targets
+function weightedRandomSelectionFromTargets(targets, numberOfFills) {
+  const selected = [];
+  const available = [...targets]; // Copy array
+
+  while (selected.length < numberOfFills && available.length > 0) {
+    const totalWeight = available.reduce(
+      (sum, target) => sum + target.difficulty,
+      0
+    );
+    let random = Math.random() * totalWeight;
+    let weightSum = 0;
+
+    for (let i = 0; i < available.length; i++) {
+      weightSum += available[i].difficulty;
+      if (random <= weightSum) {
+        selected.push(available[i]);
+        available.splice(i, 1); // Remove selected item
+        break;
+      }
+    }
+
+    // Fallback: if weighted selection fails, pick random available item
+    if (selected.length < numberOfFills && available.length > 0) {
+      const randomIndex = Math.floor(Math.random() * available.length);
+      selected.push(available[randomIndex]);
+      available.splice(randomIndex, 1);
+    }
+  }
+
+  return selected;
 }
 
 // Calculate weights for items based on difficulty
@@ -647,14 +829,33 @@ function calculateValueDifficulty(value) {
   return Math.min(difficulty, 3);
 }
 
-// Generate advanced placeholder with contextual information
+// Enhanced placeholder generation for structural limitations
 function generateAdvancedPlaceholder(correctValue) {
   const value = correctValue.toLowerCase();
   const difficulty = calculateValueDifficulty(correctValue);
 
   let basePlaceholder = "";
 
-  if (value.includes("kias") || value.includes("knots")) {
+  // Enhanced placeholders for structural limitations
+  if (currentCategory === "Structural Limitations") {
+    if (value.includes("lbs")) {
+      if (
+        value.includes("85,") ||
+        value.includes("74,") ||
+        value.includes("69,")
+      ) {
+        basePlaceholder = "Enter weight (thousands)";
+      } else {
+        basePlaceholder = "Enter weight";
+      }
+    } else if (value.includes("gal")) {
+      basePlaceholder = "Enter fuel capacity";
+    } else {
+      basePlaceholder = "Enter weight/volume";
+    }
+  }
+  // Original logic for other categories
+  else if (value.includes("kias") || value.includes("knots")) {
     basePlaceholder = "Enter speed";
   } else if (value.includes("°c")) {
     basePlaceholder = "Enter temperature";
@@ -933,7 +1134,7 @@ function skipQuestion(input, correctValue) {
   updateProgress();
 }
 
-// Add difficulty selector to the UI
+// Enhanced difficulty display for multi-column data
 function addDifficultySelector() {
   const existingSelector = document.getElementById("difficulty-selector");
   if (existingSelector) return;
@@ -941,13 +1142,18 @@ function addDifficultySelector() {
   const controls = document.querySelector(".controls");
   const difficultyContainer = document.createElement("div");
   difficultyContainer.className = "difficulty-container";
+
+  // Dynamic percentage display based on category
+  const isMultiColumn = currentCategory === "Structural Limitations";
+  const baseText = isMultiColumn ? "cells" : "questions";
+
   difficultyContainer.innerHTML = `
     <label for="difficulty-select" style="color: #00ff41; margin-right: 10px; font-family: 'JetBrains Mono', monospace;">Difficulty:</label>
     <select id="difficulty-select" onchange="changeDifficulty()">
-      <option value="easy">Easy (30%)</option>
-      <option value="medium" selected>Medium (50%)</option>
-      <option value="hard">Hard (70%)</option>
-      <option value="expert">Expert (90%)</option>
+      <option value="easy">Easy (30% ${baseText})</option>
+      <option value="medium" selected>Medium (50% ${baseText})</option>
+      <option value="hard">Hard (70% ${baseText})</option>
+      <option value="expert">Expert (90% ${baseText})</option>
     </select>
   `;
 
