@@ -10,14 +10,100 @@
     <meta name="apple-mobile-web-app-title" content="Aircraft Limits" />
 
     <script>
-      // Register service worker
+      // Enhanced service worker registration with update detection
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
           navigator.serviceWorker
             .register("./sw.js")
-            .then((registration) => console.log("SW registered"))
-            .catch((error) => console.log("SW registration failed"));
+            .then((registration) => {
+              console.log("SW registered:", registration);
+
+              // Check for updates
+              registration.addEventListener("updatefound", () => {
+                console.log("New service worker found!");
+                const newWorker = registration.installing;
+
+                newWorker.addEventListener("statechange", () => {
+                  if (
+                    newWorker.state === "installed" &&
+                    navigator.serviceWorker.controller
+                  ) {
+                    // New service worker available, show update notification
+                    showUpdateNotification();
+                  }
+                });
+              });
+
+              // Check for updates every 30 seconds
+              setInterval(() => {
+                registration.update();
+              }, 30000);
+            })
+            .catch((error) => console.log("SW registration failed:", error));
         });
+
+        // Listen for controller change (when new SW takes over)
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          window.location.reload();
+        });
+      }
+
+      function showUpdateNotification() {
+        // Create update notification
+        const updateBanner = document.createElement("div");
+        updateBanner.id = "update-banner";
+        updateBanner.innerHTML = `
+          <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 255, 65, 0.1);
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            padding: 10px;
+            text-align: center;
+            z-index: 10000;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+          ">
+            🚀 New version available! 
+            <button onclick="updateApp()" style="
+              background: rgba(0, 255, 65, 0.1);
+              border: 1px solid #00ff41;
+              color: #00ff41;
+              padding: 5px 10px;
+              margin-left: 10px;
+              cursor: pointer;
+              font-family: 'JetBrains Mono', monospace;
+            ">UPDATE NOW</button>
+            <button onclick="dismissUpdate()" style="
+              background: transparent;
+              border: 1px solid rgba(0, 255, 65, 0.5);
+              color: rgba(0, 255, 65, 0.7);
+              padding: 5px 10px;
+              margin-left: 5px;
+              cursor: pointer;
+              font-family: 'JetBrains Mono', monospace;
+            ">Later</button>
+          </div>
+        `;
+        document.body.appendChild(updateBanner);
+      }
+
+      function updateApp() {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: "SKIP_WAITING",
+          });
+        }
+      }
+
+      function dismissUpdate() {
+        const banner = document.getElementById("update-banner");
+        if (banner) {
+          banner.remove();
+        }
       }
     </script>
     <meta charset="UTF-8" />
