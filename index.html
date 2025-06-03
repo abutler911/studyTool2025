@@ -115,219 +115,145 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <!-- Animated Background Elements -->
-    <div class="background-animation">
-      <div class="floating-shapes">
-        <div class="shape shape-1">✈️</div>
-        <div class="shape shape-2">🚁</div>
-        <div class="shape shape-3">🛩️</div>
-        <div class="shape shape-4">⭐</div>
-        <div class="shape shape-5">🌟</div>
-        <div class="shape shape-6">💫</div>
-      </div>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+      <div class="loading-spinner"></div>
     </div>
 
-    <!-- Enhanced Mobile FAB with better touch handling -->
+    <!-- Mobile FAB -->
     <div class="mobile-fab" id="mobile-fab">
       <div class="fab-icon">⚙️</div>
-      <div class="fab-ripple"></div>
     </div>
 
-    <!-- Enhanced Mobile sliding menu -->
+    <!-- Mobile Menu -->
     <div class="mobile-menu" id="mobile-menu">
-      <div class="mobile-menu-header">
-        <h3>🎯 Quick Actions</h3>
-        <button class="close-menu" id="close-menu-btn">✕</button>
-      </div>
-      <div class="mobile-menu-content">
-        <button class="mobile-menu-btn study-btn" data-mode="study">
-          📚 Study Mode
-        </button>
-        <button class="mobile-menu-btn quiz-btn" data-mode="quiz">
-          🧠 Quiz Mode
-        </button>
-        <button class="mobile-menu-btn fill-btn" data-mode="fill">
-          ✏️ Fill-in Mode
-        </button>
-        <button class="mobile-menu-btn timer-btn" data-mode="timer">
-          ⏱️ Timer Challenge
-        </button>
-        <button class="mobile-menu-btn reset-btn" id="mobile-reset-btn">
-          🔄 Reset Progress
-        </button>
+      <div class="menu-handle"></div>
+      <div class="mobile-menu-grid">
+        <div class="mobile-menu-btn" data-mode="study">
+          <span class="icon">📚</span>
+          <span class="label">Study</span>
+        </div>
+        <div class="mobile-menu-btn" data-mode="quiz">
+          <span class="icon">🧠</span>
+          <span class="label">Quiz</span>
+        </div>
+        <div class="mobile-menu-btn" data-mode="fill">
+          <span class="icon">✏️</span>
+          <span class="label">Fill-in</span>
+        </div>
+        <div class="mobile-menu-btn" data-mode="timer">
+          <span class="icon">⏱️</span>
+          <span class="label">Timer</span>
+        </div>
+        <div class="mobile-menu-btn reset" id="mobile-reset">
+          <span class="icon">🔄</span>
+          <span class="label">Reset</span>
+        </div>
       </div>
     </div>
-
-    <!-- Mobile menu overlay -->
     <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
 
-    <div class="container">
+    <!-- Main App Container -->
+    <div class="app-container">
+      <!-- Header -->
       <div class="header">
-        <div class="header-glow"></div>
         <h1>✈️ Aircraft Limitations Study Tool</h1>
-        <p>Master your aircraft limitations with interactive study modes!</p>
+        <p>Master your aircraft limitations with interactive study modes</p>
 
-        <!-- Enhanced category selector -->
-        <div class="category-selector-container">
+        <div class="category-selector">
           <div class="select-wrapper">
             <select id="category-select">
               <option value="Structural Limitations">
-                🏗️ Structural Limitations
+                Structural Limitations
               </option>
               <option value="Structural Dimensions">
-                📏 Structural Dimensions
+                Structural Dimensions
               </option>
               <option value="Max Altitude and Temp Limits">
-                🌡️ Altitude & Temperature Limits
+                Altitude & Temperature
               </option>
-              <option value="Airspeed and Mach Limits">
-                💨 Airspeed & Mach Limits
-              </option>
-              <option value="Max Flap Operating Speed">
-                🛬 Flap Operating Speeds
-              </option>
+              <option value="Airspeed and Mach Limits">Airspeed & Mach</option>
+              <option value="Max Flap Operating Speed">Flap Speeds</option>
               <option value="Starter Cranking Limits on Ground">
-                🔧 Starter Limits (Ground)
+                Starter Limits (Ground)
               </option>
               <option value="Starter Cranking Limits in Flight">
-                ✈️ Starter Limits (Flight)
+                Starter Limits (Flight)
               </option>
-              <option value="Dry Motoring Cycle Limits">
-                ⚙️ Dry Motoring Limits
-              </option>
-              <option value="APU Starter Duty Cycle">
-                🔋 APU Starter Duty
-              </option>
-              <option value="APU Operational Limits to Start">
-                🚀 APU Start Limits
-              </option>
+              <option value="Dry Motoring Cycle Limits">Dry Motoring</option>
+              <option value="APU Starter Duty Cycle">APU Starter</option>
+              <option value="APU Operational Limits to Start">APU Start</option>
               <option value="APU Operational Limits for Cont Operation">
-                🔄 APU Operation Limits
+                APU Operation
               </option>
-              <option value="Fuel">⛽ Fuel Specifications</option>
-              <option value="Pressurization">💨 Pressurization</option>
-              <option value="Memory Items">🧠 Memory Items</option>
+              <option value="Fuel">Fuel</option>
+              <option value="Pressurization">Pressurization</option>
+              <option value="Memory Items">Memory Items</option>
             </select>
             <div class="select-arrow">▼</div>
           </div>
         </div>
       </div>
 
-      <!-- Enhanced responsive controls -->
+      <!-- Desktop Controls -->
       <div class="controls-container">
-        <div class="controls desktop-controls">
-          <button class="btn btn-study active" data-mode="study">
-            📚 Study Mode
-          </button>
-          <button class="btn btn-quiz" data-mode="quiz">🧠 Quiz Mode</button>
-          <button class="btn btn-fill" data-mode="fill">✏️ Fill-in Mode</button>
-          <button class="btn btn-timer" data-mode="timer">
-            ⏱️ Timer Challenge
-          </button>
-          <button class="btn btn-reset" id="desktop-reset-btn">🔄 Reset</button>
-        </div>
-
-        <!-- Mobile-specific compact controls -->
-        <div class="controls mobile-controls">
-          <div class="mode-selector">
-            <div class="select-wrapper">
-              <select id="mobile-mode-select">
-                <option value="study">📚 Study</option>
-                <option value="quiz">🧠 Quiz</option>
-                <option value="fill">✏️ Fill-in</option>
-                <option value="timer">⏱️ Timer</option>
-              </select>
-              <div class="select-arrow">▼</div>
-            </div>
-          </div>
-          <button class="btn mobile-reset" id="mobile-reset-main">🔄</button>
+        <div class="controls">
+          <button class="btn active" data-mode="study">📚 Study</button>
+          <button class="btn" data-mode="quiz">🧠 Quiz</button>
+          <button class="btn" data-mode="fill">✏️ Fill-in</button>
+          <button class="btn" data-mode="timer">⏱️ Timer</button>
+          <button class="btn btn-reset" id="reset-btn">🔄 Reset</button>
         </div>
       </div>
 
-      <!-- Enhanced stats with amazing animations -->
+      <!-- Stats -->
       <div class="stats-container">
-        <div class="stats">
-          <div class="stat stat-correct">
+        <div class="stats-grid">
+          <div class="stat-card">
             <div class="stat-icon">✅</div>
-            <div class="stat-value" id="correct-count">0</div>
-            <div class="stat-label">Correct</div>
+            <span class="stat-value" id="correct-count">0</span>
+            <span class="stat-label">Correct</span>
           </div>
-          <div class="stat stat-incorrect">
+          <div class="stat-card">
             <div class="stat-icon">❌</div>
-            <div class="stat-value" id="incorrect-count">0</div>
-            <div class="stat-label">Incorrect</div>
+            <span class="stat-value" id="incorrect-count">0</span>
+            <span class="stat-label">Incorrect</span>
           </div>
-          <div class="stat stat-streak">
+          <div class="stat-card">
             <div class="stat-icon">🔥</div>
-            <div class="stat-value" id="streak-count">0</div>
-            <div class="stat-label">Streak</div>
+            <span class="stat-value" id="streak-count">0</span>
+            <span class="stat-label">Streak</span>
           </div>
-          <div class="stat stat-accuracy">
+          <div class="stat-card">
             <div class="stat-icon">🎯</div>
-            <div class="stat-value" id="accuracy-rate">0%</div>
-            <div class="stat-label">Accuracy</div>
+            <span class="stat-value" id="accuracy-rate">0%</span>
+            <span class="stat-label">Accuracy</span>
           </div>
         </div>
 
-        <!-- Enhanced progress bar with awesome animations -->
-        <div class="progress-container">
+        <div class="progress-wrapper">
+          <div class="progress-text" id="progress-text">0%</div>
           <div class="progress-bar">
             <div class="progress-fill" id="progress-fill"></div>
-            <div class="progress-sparkles">
-              <div class="sparkle sparkle-1">✨</div>
-              <div class="sparkle sparkle-2">⭐</div>
-              <div class="sparkle sparkle-3">🌟</div>
-            </div>
           </div>
-          <div class="progress-text" id="progress-text">0%</div>
         </div>
       </div>
 
-      <!-- Enhanced Timer -->
+      <!-- Timer -->
       <div class="timer-container">
         <div class="timer" id="timer" style="display: none">
-          <div class="timer-icon">⏱️</div>
-          <div class="timer-text">Time: 05:00</div>
+          <span>⏱️</span>
+          <span class="timer-text">05:00</span>
         </div>
       </div>
 
-      <!-- Enhanced table container -->
-      <div class="table-container">
+      <!-- Table Container -->
+      <div class="table-container" id="table-container">
         <div class="table-scroll-wrapper">
           <table id="limitations-table">
             <thead id="table-head"></thead>
             <tbody id="table-body"></tbody>
           </table>
-        </div>
-
-        <!-- Mobile table navigation hint -->
-        <div class="mobile-table-hint">
-          <span>↔️ Swipe to scroll table horizontally</span>
-        </div>
-      </div>
-
-      <!-- Enhanced footer -->
-      <div class="app-footer">
-        <div class="footer-content">
-          <p>
-            🎯 Study efficiently • 📊 Track progress • 🏆 Master limitations
-          </p>
-          <div class="app-version">✨ v3.0.0 - Supercharged Edition</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Enhanced loading screen -->
-    <div class="loading-screen" id="loading-screen">
-      <div class="loading-content">
-        <div class="loading-spinner">
-          <div class="spinner-ring"></div>
-          <div class="spinner-ring"></div>
-          <div class="spinner-ring"></div>
-        </div>
-        <div class="loading-text">🚀 Loading Aircraft Data...</div>
-        <div class="loading-dots">
-          <span>.</span><span>.</span><span>.</span>
         </div>
       </div>
     </div>
