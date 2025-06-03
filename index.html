@@ -8,6 +8,11 @@
       content="black-translucent"
     />
     <meta name="apple-mobile-web-app-title" content="Aircraft Limits" />
+    <meta name="theme-color" content="#00ff41" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
 
     <script>
       // Enhanced service worker registration with update detection
@@ -53,39 +58,10 @@
         const updateBanner = document.createElement("div");
         updateBanner.id = "update-banner";
         updateBanner.innerHTML = `
-          <div style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 255, 65, 0.1);
-            border: 1px solid #00ff41;
-            color: #00ff41;
-            padding: 10px;
-            text-align: center;
-            z-index: 10000;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
-          ">
+          <div class="update-banner-content">
             🚀 New version available! 
-            <button onclick="updateApp()" style="
-              background: rgba(0, 255, 65, 0.1);
-              border: 1px solid #00ff41;
-              color: #00ff41;
-              padding: 5px 10px;
-              margin-left: 10px;
-              cursor: pointer;
-              font-family: 'JetBrains Mono', monospace;
-            ">UPDATE NOW</button>
-            <button onclick="dismissUpdate()" style="
-              background: transparent;
-              border: 1px solid rgba(0, 255, 65, 0.5);
-              color: rgba(0, 255, 65, 0.7);
-              padding: 5px 10px;
-              margin-left: 5px;
-              cursor: pointer;
-              font-family: 'JetBrains Mono', monospace;
-            ">Later</button>
+            <button onclick="updateApp()" class="update-btn">UPDATE NOW</button>
+            <button onclick="dismissUpdate()" class="dismiss-btn">Later</button>
           </div>
         `;
         document.body.appendChild(updateBanner);
@@ -105,94 +81,226 @@
           banner.remove();
         }
       }
+
+      // Detect device orientation and adjust interface
+      function handleOrientationChange() {
+        const isLandscape = window.innerWidth > window.innerHeight;
+        const isMobile = window.innerWidth <= 768;
+
+        document.body.classList.toggle(
+          "mobile-landscape",
+          isMobile && isLandscape
+        );
+        document.body.classList.toggle(
+          "mobile-portrait",
+          isMobile && !isLandscape
+        );
+      }
+
+      window.addEventListener("resize", handleOrientationChange);
+      window.addEventListener("orientationchange", () => {
+        setTimeout(handleOrientationChange, 100);
+      });
+      window.addEventListener("load", handleOrientationChange);
     </script>
+
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Aircraft Limitations Study Tool</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <!-- Mobile-first floating action button for quick access -->
+    <div class="mobile-fab" id="mobile-fab" onclick="toggleMobileMenu()">
+      <span class="fab-icon">⚙️</span>
+    </div>
+
+    <!-- Mobile sliding menu -->
+    <div class="mobile-menu" id="mobile-menu">
+      <div class="mobile-menu-header">
+        <h3>Quick Actions</h3>
+        <button onclick="toggleMobileMenu()" class="close-menu">✕</button>
+      </div>
+      <div class="mobile-menu-content">
+        <button
+          class="mobile-menu-btn"
+          onclick="setMode('study'); toggleMobileMenu()"
+        >
+          📚 Study Mode
+        </button>
+        <button
+          class="mobile-menu-btn"
+          onclick="setMode('quiz'); toggleMobileMenu()"
+        >
+          🧠 Quiz Mode
+        </button>
+        <button
+          class="mobile-menu-btn"
+          onclick="setMode('fill'); toggleMobileMenu()"
+        >
+          ✏️ Fill-in Mode
+        </button>
+        <button
+          class="mobile-menu-btn"
+          onclick="setMode('timer'); toggleMobileMenu()"
+        >
+          ⏱️ Timer Challenge
+        </button>
+        <button
+          class="mobile-menu-btn"
+          onclick="resetProgress(); toggleMobileMenu()"
+        >
+          🔄 Reset Progress
+        </button>
+      </div>
+    </div>
+
     <div class="container">
       <div class="header">
         <h1>✈️ Aircraft Limitations Study Tool</h1>
         <p>Master your aircraft limitations with interactive study modes</p>
-      </div>
-      <div class="controls">
-        <select id="category-select" onchange="changeCategory()">
-          <option value="Structural Limitations">Structural Limitations</option>
-          <option value="Structural Dimensions">Structural Dimensions</option>
-          <option value="Max Altitude and Temp Limits">
-            Max Altitude and Temp Limits
-          </option>
-          <option value="Airspeed and Mach Limits">
-            Airspeed and Mach Limits
-          </option>
-          <option value="Max Flap Operating Speed">
-            Max Flap Operating Speed
-          </option>
-          <option value="Starter Cranking Limits on Ground">
-            Starter Cranking Limits on Ground
-          </option>
-          <option value="Starter Cranking Limits in Flight">
-            Starter Cranking Limits in Flight
-          </option>
-          <option value="Dry Motoring Cycle Limits">
-            Dry Motoring Cycle Limits
-          </option>
-          <option value="APU Starter Duty Cycle">APU Starter Duty Cycle</option>
-          <option value="APU Operational Limits to Start">
-            APU Operational Limits to Start
-          </option>
-          <option value="APU Operational Limits for Cont Operation">
-            APU Operational Limits for Cont Operation
-          </option>
-          <option value="Fuel">Fuel</option>
-          <option value="Pressurization">Pressurization</option>
-          <option value="Memory Items">Memory Items</option>
-        </select>
-      </div>
-      <div class="controls">
-        <button class="btn active" onclick="setMode('study')">
-          📚 Study Mode
-        </button>
-        <button class="btn" onclick="setMode('quiz')">🧠 Quiz Mode</button>
-        <button class="btn" onclick="setMode('fill')">✏️ Fill-in Mode</button>
-        <button class="btn" onclick="setMode('timer')">
-          ⏱️ Timer Challenge
-        </button>
-        <button class="btn" onclick="resetProgress()">🔄 Reset</button>
-      </div>
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-value" id="correct-count">0</div>
-          <div class="stat-label">Correct</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value" id="incorrect-count">0</div>
-          <div class="stat-label">Incorrect</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value" id="streak-count">0</div>
-          <div class="stat-label">Streak</div>
+
+        <!-- Mobile-optimized category selector -->
+        <div class="category-selector-container">
+          <select id="category-select" onchange="changeCategory()">
+            <option value="Structural Limitations">
+              Structural Limitations
+            </option>
+            <option value="Structural Dimensions">Structural Dimensions</option>
+            <option value="Max Altitude and Temp Limits">
+              Max Altitude and Temp Limits
+            </option>
+            <option value="Airspeed and Mach Limits">
+              Airspeed and Mach Limits
+            </option>
+            <option value="Max Flap Operating Speed">
+              Max Flap Operating Speed
+            </option>
+            <option value="Starter Cranking Limits on Ground">
+              Starter Cranking Limits on Ground
+            </option>
+            <option value="Starter Cranking Limits in Flight">
+              Starter Cranking Limits in Flight
+            </option>
+            <option value="Dry Motoring Cycle Limits">
+              Dry Motoring Cycle Limits
+            </option>
+            <option value="APU Starter Duty Cycle">
+              APU Starter Duty Cycle
+            </option>
+            <option value="APU Operational Limits to Start">
+              APU Operational Limits to Start
+            </option>
+            <option value="APU Operational Limits for Cont Operation">
+              APU Operational Limits for Cont Operation
+            </option>
+            <option value="Fuel">Fuel</option>
+            <option value="Pressurization">Pressurization</option>
+            <option value="Memory Items">Memory Items</option>
+          </select>
         </div>
       </div>
-      <div class="progress-bar">
-        <div class="progress-fill" id="progress-fill"></div>
+
+      <!-- Enhanced responsive controls -->
+      <div class="controls-container">
+        <div class="controls desktop-controls">
+          <button class="btn active" onclick="setMode('study')">
+            📚 Study Mode
+          </button>
+          <button class="btn" onclick="setMode('quiz')">🧠 Quiz Mode</button>
+          <button class="btn" onclick="setMode('fill')">✏️ Fill-in Mode</button>
+          <button class="btn" onclick="setMode('timer')">
+            ⏱️ Timer Challenge
+          </button>
+          <button class="btn" onclick="resetProgress()">🔄 Reset</button>
+        </div>
+
+        <!-- Mobile-specific compact controls -->
+        <div class="controls mobile-controls">
+          <div class="mode-selector">
+            <select id="mobile-mode-select" onchange="setMobileMode()">
+              <option value="study">📚 Study</option>
+              <option value="quiz">🧠 Quiz</option>
+              <option value="fill">✏️ Fill-in</option>
+              <option value="timer">⏱️ Timer</option>
+            </select>
+          </div>
+          <button class="btn mobile-reset" onclick="resetProgress()">🔄</button>
+        </div>
       </div>
-      <div class="timer" id="timer" style="display: none">Time: 05:00</div>
+
+      <!-- Enhanced stats with better mobile layout -->
+      <div class="stats-container">
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value" id="correct-count">0</div>
+            <div class="stat-label">Correct</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="incorrect-count">0</div>
+            <div class="stat-label">Incorrect</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="streak-count">0</div>
+            <div class="stat-label">Streak</div>
+          </div>
+          <div class="stat accuracy-stat">
+            <div class="stat-value" id="accuracy-rate">0%</div>
+            <div class="stat-label">Accuracy</div>
+          </div>
+        </div>
+
+        <!-- Enhanced progress bar with percentage -->
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+            <div class="progress-text" id="progress-text">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timer with better mobile positioning -->
+      <div class="timer-container">
+        <div class="timer" id="timer" style="display: none">Time: 05:00</div>
+      </div>
+
+      <!-- Enhanced table container with better mobile scrolling -->
       <div class="table-container">
-        <table id="limitations-table">
-          <thead id="table-head"></thead>
-          <tbody id="table-body"></tbody>
-        </table>
+        <div class="table-scroll-wrapper">
+          <table id="limitations-table">
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+
+        <!-- Mobile table navigation hint -->
+        <div class="mobile-table-hint">
+          <span>↔️ Swipe to scroll table</span>
+        </div>
+      </div>
+
+      <!-- Enhanced footer with app info -->
+      <div class="app-footer">
+        <div class="footer-content">
+          <p>Study efficiently • Track progress • Master limitations</p>
+          <div class="app-version">v2.1.0</div>
+        </div>
       </div>
     </div>
+
+    <!-- Enhanced loading screen -->
+    <div class="loading-screen" id="loading-screen">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Aircraft Data...</div>
+      </div>
+    </div>
+
     <script src="script.js"></script>
   </body>
 </html>

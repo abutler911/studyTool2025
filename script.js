@@ -1,103 +1,59 @@
-// Enhanced progressive hints for structural limitations
-function generateProgressiveHints(correctValue, hintLevel) {
-  const hints = [];
-  const value = correctValue.toLowerCase();
+// ============================================
+// ENHANCED MOBILE-FIRST AIRCRAFT LIMITATIONS STUDY TOOL
+// ============================================
 
-  // Level 0: Category hint with structural limitations context
-  if (hintLevel === 0) {
-    if (currentCategory === "Structural Limitations") {
-      if (value.includes("lbs")) {
-        if (value.includes("85,")) {
-          hints.push(
-            "This is one of the maximum weight limits - likely takeoff or ramp weight."
-          );
-        } else if (value.includes("74,")) {
-          hints.push("This is the maximum landing weight for the aircraft.");
-        } else if (value.includes("69,")) {
-          hints.push("This is the maximum zero fuel weight.");
-        } else {
-          hints.push("This is a weight measurement in pounds.");
-        }
-      } else if (value.includes("gal")) {
-        hints.push("This is the fuel capacity measurement.");
-      } else {
-        hints.push("This is a structural limitation value.");
-      }
-    }
-    // Original category hints for other types
-    else if (value.includes("ft") || value.includes("feet")) {
-      hints.push("This is a measurement of distance or altitude.");
-    } else if (value.includes("lbs") || value.includes("pounds")) {
-      hints.push("This is a weight measurement.");
-    } else if (value.includes("°c") || value.includes("temperature")) {
-      hints.push("This is a temperature measurement.");
-    } else if (value.includes("kias") || value.includes("knots")) {
-      hints.push("This is a speed measurement.");
-    } else if (value.includes("%")) {
-      hints.push("This is a percentage value.");
-    } else {
-      hints.push("Think about what type of measurement this might be.");
-    }
-  }
+// Global variables with enhanced mobile support
+let currentCategory = "Structural Limitations";
+let currentMode = "study";
+let correctCount = 0;
+let incorrectCount = 0;
+let streakCount = 0;
+let timerInterval = null;
+let timeRemaining = 300;
+let isMobile = false;
+let isTablet = false;
+let isLandscape = false;
 
-  // Level 1: Range hint with more specific context
-  else if (hintLevel === 1) {
-    const numbers = correctValue.match(/\d+/g);
-    if (numbers && numbers.length > 0) {
-      const mainNumber = parseInt(numbers[0]);
+// Enhanced progress tracking
+let savedProgress = {
+  correctCount: 0,
+  incorrectCount: 0,
+  streakCount: 0,
+  mode: "study",
+  category: "Structural Limitations",
+  completedQuestions: new Set(),
+  totalTimeSpent: 0,
+  sessionStartTime: Date.now(),
+};
 
-      if (
-        currentCategory === "Structural Limitations" &&
-        correctValue.includes("lbs")
-      ) {
-        if (mainNumber >= 80000) {
-          hints.push(
-            "This weight is over 80,000 lbs - a maximum operational weight."
-          );
-        } else if (mainNumber >= 70000) {
-          hints.push(
-            "This weight is in the 70,000s - likely a landing or zero fuel weight."
-          );
-        } else {
-          hints.push("This is a significant aircraft weight measurement.");
-        }
-      } else {
-        // Original range hints
-        if (mainNumber < 100) {
-          hints.push("The number is less than 100.");
-        } else if (mainNumber < 1000) {
-          hints.push("The number is between 100 and 1,000.");
-        } else if (mainNumber < 10000) {
-          hints.push("The number is between 1,000 and 10,000.");
-        } else {
-          hints.push("The number is greater than 10,000.");
-        }
-      }
-    } else {
-      hints.push("Think about the typical range for this type of measurement.");
-    }
-  }
+// Mobile-optimized fill-in configuration
+let fillModeConfig = {
+  difficulty: "medium",
+  randomSelection: true,
+  fillPercentage: 50,
+  showHints: true,
+  instantFeedback: true,
+  adaptiveDifficulty: false,
+  mobileOptimized: true,
+};
 
-  // Level 2: Partial reveal
-  else if (hintLevel === 2) {
-    if (correctValue.length > 3) {
-      const firstPart = correctValue.substring(
-        0,
-        Math.ceil(correctValue.length * 0.4)
-      );
-      const lastPart = correctValue.substring(
-        Math.floor(correctValue.length * 0.7)
-      );
-      hints.push(
-        `The answer starts with "${firstPart}" and ends with "${lastPart}"`
-      );
-    } else {
-      hints.push(`The answer is: ${correctValue}`);
-    }
-  }
+// Performance tracking with mobile considerations
+let performanceTracker = {
+  totalAttempts: 0,
+  correctAnswers: 0,
+  averageHintsUsed: 0,
+  averageTimePerQuestion: 0,
+  touchInteractions: 0,
+  keyboardInteractions: 0,
+};
 
-  return hints;
-}
+let hasShownFillModeHelp = false;
+let mobileMenuOpen = false;
+
+// ============================================
+// LIMITATIONS DATA
+// ============================================
+
 const limitationsCategories = {
   "Structural Limitations": {
     columns: ["Structure", "ERJ175LL", "ERJ175LR"],
@@ -336,43 +292,131 @@ const limitationsCategories = {
   },
 };
 
-let currentCategory = "Structural Limitations";
-let currentMode = "study";
-let correctCount = 0;
-let incorrectCount = 0;
-let streakCount = 0;
-let timerInterval = null;
-let timeRemaining = 300;
+// ============================================
+// MOBILE DETECTION AND ADAPTATION
+// ============================================
 
-let savedProgress = {
-  correctCount: 0,
-  incorrectCount: 0,
-  streakCount: 0,
-  mode: "study",
-  category: "Structural Limitations",
-};
+function detectDeviceCapabilities() {
+  const userAgent = navigator.userAgent.toLowerCase();
+  const screenWidth = window.innerWidth;
+  const screenHeight = window.innerHeight;
 
-// Enhanced fill-in-the-blank configuration
-let fillModeConfig = {
-  difficulty: "medium",
-  randomSelection: true,
-  fillPercentage: 50,
-  showHints: true,
-  instantFeedback: true,
-  adaptiveDifficulty: false,
-};
+  isMobile = screenWidth <= 768;
+  isTablet = screenWidth > 768 && screenWidth <= 1024;
+  isLandscape = screenWidth > screenHeight;
 
-// Performance tracking
-let performanceTracker = {
-  totalAttempts: 0,
-  correctAnswers: 0,
-  averageHintsUsed: 0,
-  averageTimePerQuestion: 0,
-};
+  const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
-let hasShownFillModeHelp = false;
+  document.documentElement.style.setProperty(
+    "--vh",
+    `${window.innerHeight * 0.01}px`
+  );
+  document.documentElement.style.setProperty(
+    "--vw",
+    `${window.innerWidth * 0.01}px`
+  );
 
-// Enhanced answer checking with smart matching
+  document.body.classList.toggle("mobile", isMobile);
+  document.body.classList.toggle("tablet", isTablet);
+  document.body.classList.toggle("has-touch", hasTouch);
+  document.body.classList.toggle("landscape", isLandscape);
+
+  if (isMobile) {
+    adjustMobileInterface();
+  }
+
+  return { isMobile, isTablet, isLandscape, hasTouch };
+}
+
+function adjustMobileInterface() {
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+    document.body.style.webkitOverflowScrolling = "touch";
+  }
+
+  const viewport = document.querySelector('meta[name="viewport"]');
+  if (viewport) {
+    viewport.setAttribute(
+      "content",
+      "width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
+    );
+  }
+
+  document.addEventListener("touchstart", handleTouchStart, { passive: true });
+  document.addEventListener("touchmove", handleTouchMove, { passive: true });
+  document.addEventListener("touchend", handleTouchEnd, { passive: true });
+}
+
+function handleTouchStart(e) {
+  performanceTracker.touchInteractions++;
+
+  const table = e.target.closest(".table-scroll-wrapper");
+  if (table) {
+    table.startX = e.touches[0].clientX;
+  }
+}
+
+function handleTouchMove(e) {
+  const table = e.target.closest(".table-scroll-wrapper");
+  if (table && table.startX) {
+    const currentX = e.touches[0].clientX;
+    const diffX = table.startX - currentX;
+    table.scrollLeft += diffX * 0.5;
+  }
+}
+
+function handleTouchEnd(e) {
+  const table = e.target.closest(".table-scroll-wrapper");
+  if (table) {
+    delete table.startX;
+  }
+}
+
+// ============================================
+// MOBILE MENU FUNCTIONALITY
+// ============================================
+
+function toggleMobileMenu() {
+  const menu = document.getElementById("mobile-menu");
+  const fab = document.getElementById("mobile-fab");
+
+  if (!menu || !fab) return;
+
+  mobileMenuOpen = !mobileMenuOpen;
+
+  menu.classList.toggle("active", mobileMenuOpen);
+  fab.style.opacity = mobileMenuOpen ? "0.7" : "1";
+
+  document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
+
+  if (mobileMenuOpen) {
+    setTimeout(() => {
+      document.addEventListener("click", closeMobileMenuOnOutsideClick);
+    }, 100);
+  } else {
+    document.removeEventListener("click", closeMobileMenuOnOutsideClick);
+  }
+}
+
+function closeMobileMenuOnOutsideClick(e) {
+  const menu = document.getElementById("mobile-menu");
+  const fab = document.getElementById("mobile-fab");
+
+  if (!menu.contains(e.target) && !fab.contains(e.target)) {
+    toggleMobileMenu();
+  }
+}
+
+function setMobileMode() {
+  const select = document.getElementById("mobile-mode-select");
+  if (select) {
+    setMode(select.value);
+  }
+}
+
+// ============================================
+// ANSWER CHECKING SYSTEM
+// ============================================
+
 function smartAnswerCheck(userAnswer, correctAnswer) {
   const normalizeAnswer = (answer) => {
     return answer
@@ -450,7 +494,6 @@ function smartAnswerCheck(userAnswer, correctAnswer) {
   return { isCorrect: false, score: 0 };
 }
 
-// Calculate string similarity
 function calculateSimilarity(str1, str2) {
   const longer = str1.length > str2.length ? str1 : str2;
   const shorter = str1.length > str2.length ? str2 : str1;
@@ -461,7 +504,6 @@ function calculateSimilarity(str1, str2) {
   return (longer.length - distance) / longer.length;
 }
 
-// Levenshtein distance calculation
 function levenshteinDistance(str1, str2) {
   const matrix = [];
 
@@ -490,13 +532,167 @@ function levenshteinDistance(str1, str2) {
   return matrix[str2.length][str1.length];
 }
 
-// Enhanced fill-in mode with multi-column support for all data values
+// ============================================
+// PROGRESSIVE HINTS SYSTEM
+// ============================================
+
+function generateProgressiveHints(correctValue, hintLevel) {
+  const hints = [];
+  const value = correctValue.toLowerCase();
+
+  if (hintLevel === 0) {
+    if (currentCategory === "Structural Limitations") {
+      if (value.includes("lbs")) {
+        if (value.includes("85,")) {
+          hints.push(
+            "💡 This is one of the maximum weight limits - likely takeoff or ramp weight."
+          );
+        } else if (value.includes("74,")) {
+          hints.push("🛬 This is the maximum landing weight for the aircraft.");
+        } else if (value.includes("69,")) {
+          hints.push("⚖️ This is the maximum zero fuel weight.");
+        } else {
+          hints.push("📏 This is a weight measurement in pounds.");
+        }
+      } else if (value.includes("gal")) {
+        hints.push("⛽ This is the fuel capacity measurement.");
+      } else {
+        hints.push("🔧 This is a structural limitation value.");
+      }
+    } else if (value.includes("ft") || value.includes("feet")) {
+      hints.push("📐 This is a measurement of distance or altitude.");
+    } else if (value.includes("lbs") || value.includes("pounds")) {
+      hints.push("⚖️ This is a weight measurement.");
+    } else if (value.includes("°c") || value.includes("temperature")) {
+      hints.push("🌡️ This is a temperature measurement.");
+    } else if (value.includes("kias") || value.includes("knots")) {
+      hints.push("💨 This is a speed measurement.");
+    } else if (value.includes("%")) {
+      hints.push("📊 This is a percentage value.");
+    } else {
+      hints.push("🤔 Think about what type of measurement this might be.");
+    }
+  } else if (hintLevel === 1) {
+    const numbers = correctValue.match(/\d+/g);
+    if (numbers && numbers.length > 0) {
+      const mainNumber = parseInt(numbers[0]);
+
+      if (
+        currentCategory === "Structural Limitations" &&
+        correctValue.includes("lbs")
+      ) {
+        if (mainNumber >= 80000) {
+          hints.push(
+            "🔢 This weight is over 80,000 lbs - a maximum operational weight."
+          );
+        } else if (mainNumber >= 70000) {
+          hints.push(
+            "🔢 This weight is in the 70,000s - likely a landing or zero fuel weight."
+          );
+        } else {
+          hints.push("🔢 This is a significant aircraft weight measurement.");
+        }
+      } else {
+        if (mainNumber < 100) {
+          hints.push("🔢 The number is less than 100.");
+        } else if (mainNumber < 1000) {
+          hints.push("🔢 The number is between 100 and 1,000.");
+        } else if (mainNumber < 10000) {
+          hints.push("🔢 The number is between 1,000 and 10,000.");
+        } else {
+          hints.push("🔢 The number is greater than 10,000.");
+        }
+      }
+    } else {
+      hints.push(
+        "🎯 Think about the typical range for this type of measurement."
+      );
+    }
+  } else if (hintLevel === 2) {
+    if (correctValue.length > 3) {
+      const firstPart = correctValue.substring(
+        0,
+        Math.ceil(correctValue.length * 0.4)
+      );
+      const lastPart = correctValue.substring(
+        Math.floor(correctValue.length * 0.7)
+      );
+      hints.push(
+        `🔍 The answer starts with "${firstPart}" and ends with "${lastPart}"`
+      );
+    } else {
+      hints.push(`✅ The answer is: ${correctValue}`);
+    }
+  }
+
+  return hints;
+}
+
+function showProgressiveHint(input, correctValue, hintLevel) {
+  const hints = generateProgressiveHints(correctValue, hintLevel);
+
+  if (hints.length === 0) return;
+
+  const hintPopup = document.createElement("div");
+  hintPopup.className = isMobile
+    ? "hint-popup advanced mobile"
+    : "hint-popup advanced";
+
+  const hintContent = `
+    <div class="hint-content">
+      <div class="hint-title">💡 Hint ${hintLevel + 1}/3</div>
+      <div class="hint-text">${hints[0]}</div>
+      <div class="hint-progress">
+        <div class="hint-dots">
+          ${"●".repeat(hintLevel + 1)}${"○".repeat(2 - hintLevel)}
+        </div>
+      </div>
+      <button class="hint-close" onclick="this.parentElement.parentElement.remove()">
+        ${isMobile ? "👍 Got it!" : "Got it!"}
+      </button>
+    </div>
+  `;
+
+  hintPopup.innerHTML = hintContent;
+  document.body.appendChild(hintPopup);
+
+  if (isMobile) {
+    hintPopup.style.position = "fixed";
+    hintPopup.style.top = "50%";
+    hintPopup.style.left = "50%";
+    hintPopup.style.transform = "translate(-50%, -50%)";
+    hintPopup.style.zIndex = "1000";
+  } else {
+    const rect = input.getBoundingClientRect();
+    hintPopup.style.position = "fixed";
+    hintPopup.style.top = rect.bottom + 5 + "px";
+    hintPopup.style.left = rect.left + "px";
+    hintPopup.style.zIndex = "1000";
+  }
+
+  setTimeout(
+    () => {
+      if (hintPopup.parentElement) {
+        hintPopup.remove();
+      }
+    },
+    isMobile ? 10000 : 8000
+  );
+}
+
+// ============================================
+// ENHANCED FILL-IN MODE
+// ============================================
+
 function createEnhancedFillInMode() {
-  console.log("Starting enhanced fill-in mode with multi-column support...");
+  console.log("Starting enhanced fill-in mode with mobile optimizations...");
+
+  showLoadingScreen(true);
 
   const category = limitationsCategories[currentCategory];
   if (!category) {
     console.error("No category found:", currentCategory);
+    showLoadingScreen(false);
     return;
   }
 
@@ -505,7 +701,6 @@ function createEnhancedFillInMode() {
   const tbody = document.getElementById("table-body");
   tbody.innerHTML = "";
 
-  // For multi-column data like Structural Limitations, get all possible fill targets
   const fillTargets = selectRandomFillTargets(category);
 
   category.data.forEach((item, rowIndex) => {
@@ -514,8 +709,6 @@ function createEnhancedFillInMode() {
 
     keys.forEach((key, colIndex) => {
       const cell = document.createElement("td");
-
-      // Check if this specific cell should be a fill-in target
       const cellId = `${rowIndex}-${colIndex}`;
       const shouldBeFillIn = fillTargets.includes(cellId);
 
@@ -535,26 +728,81 @@ function createEnhancedFillInMode() {
   });
 
   addFillModeControls();
+  showLoadingScreen(false);
 
   console.log(
-    `Enhanced fill-in mode setup complete! ${fillTargets.length} cells selected for fill-in.`
+    `Enhanced fill-in mode setup complete! ${fillTargets.length} cells selected.`
   );
+
+  if (isMobile && !hasShownFillModeHelp) {
+    setTimeout(showMobileFillModeHelp, 1000);
+  }
 }
 
-// Select random cells for fill-in-the-blank based on difficulty and data structure
+function showMobileFillModeHelp() {
+  if (hasShownFillModeHelp) return;
+  hasShownFillModeHelp = true;
+
+  const helpPopup = document.createElement("div");
+  helpPopup.className = "help-popup mobile-help";
+  helpPopup.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.95);
+      border: 2px solid #00ff41;
+      padding: 20px;
+      max-width: 90vw;
+      max-height: 80vh;
+      z-index: 2000;
+      font-family: 'JetBrains Mono', monospace;
+      color: #00ff41;
+      border-radius: 8px;
+      overflow-y: auto;
+    ">
+      <h3 style="margin-bottom: 15px; color: #ffffff; text-align: center;">📱 Mobile Fill-in Mode</h3>
+      <div style="font-size: 0.8rem; line-height: 1.4; margin-bottom: 15px;">
+        <p><strong>💡 Hints:</strong> Tap the hint button</p>
+        <p><strong>⏭️ Skip:</strong> Tap skip button</p>
+        <p><strong>📝 Input:</strong> Tap field to enter answer</p>
+        <p><strong>🎯 Difficulty:</strong> Use menu to adjust difficulty</p>
+        <p><strong>🎲 Regenerate:</strong> Get new random questions</p>
+        <p><strong>↔️ Scroll:</strong> Swipe table to see more columns</p>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" style="
+        background: rgba(0, 255, 65, 0.1);
+        border: 1px solid #00ff41;
+        color: #00ff41;
+        padding: 8px 16px;
+        cursor: pointer;
+        font-family: 'JetBrains Mono', monospace;
+        width: 100%;
+        border-radius: 4px;
+        min-height: 44px;
+      ">Got it!</button>
+    </div>
+  `;
+
+  document.body.appendChild(helpPopup);
+
+  setTimeout(() => {
+    if (helpPopup.parentElement) {
+      helpPopup.remove();
+    }
+  }, 12000);
+}
+
 function selectRandomFillTargets(category) {
   const allPossibleTargets = [];
 
-  // Analyze the category structure to determine which cells can be fill-in targets
   category.data.forEach((item, rowIndex) => {
     const keys = Object.keys(item);
 
-    // For categories like "Structural Limitations" with multiple data columns
     if (currentCategory === "Structural Limitations") {
-      // Skip the first column (structure name), make ERJ175LL and ERJ175LR columns available
       keys.forEach((key, colIndex) => {
         if (colIndex > 0) {
-          // Skip first column (structure names)
           allPossibleTargets.push({
             cellId: `${rowIndex}-${colIndex}`,
             rowIndex,
@@ -565,9 +813,7 @@ function selectRandomFillTargets(category) {
           });
         }
       });
-    }
-    // For other categories, use the original logic (last column only)
-    else {
+    } else {
       keys.forEach((key, colIndex) => {
         if (
           colIndex === keys.length - 1 ||
@@ -586,51 +832,46 @@ function selectRandomFillTargets(category) {
     }
   });
 
-  // Determine how many targets to select based on difficulty
   const totalTargets = allPossibleTargets.length;
   let numberOfFills;
 
+  const baseMultiplier = isMobile ? 0.8 : 1.0;
+
   switch (fillModeConfig.difficulty) {
     case "easy":
-      numberOfFills = Math.ceil(totalTargets * 0.3);
+      numberOfFills = Math.ceil(totalTargets * 0.25 * baseMultiplier);
       break;
     case "medium":
-      numberOfFills = Math.ceil(totalTargets * 0.5);
+      numberOfFills = Math.ceil(totalTargets * 0.4 * baseMultiplier);
       break;
     case "hard":
-      numberOfFills = Math.ceil(totalTargets * 0.7);
+      numberOfFills = Math.ceil(totalTargets * 0.6 * baseMultiplier);
       break;
     case "expert":
-      numberOfFills = Math.ceil(totalTargets * 0.9);
+      numberOfFills = Math.ceil(totalTargets * 0.8 * baseMultiplier);
       break;
     default:
       numberOfFills = Math.ceil(
-        totalTargets * (fillModeConfig.fillPercentage / 100)
+        totalTargets * (fillModeConfig.fillPercentage / 100) * baseMultiplier
       );
   }
 
-  // Select targets
   let selectedTargets;
-
   if (!fillModeConfig.randomSelection) {
-    // Sequential selection
     selectedTargets = allPossibleTargets.slice(0, numberOfFills);
   } else {
-    // Weighted random selection
     selectedTargets = weightedRandomSelectionFromTargets(
       allPossibleTargets,
       numberOfFills
     );
   }
 
-  // Return just the cell IDs
   return selectedTargets.map((target) => target.cellId);
 }
 
-// Weighted random selection for multi-column targets
 function weightedRandomSelectionFromTargets(targets, numberOfFills) {
   const selected = [];
-  const available = [...targets]; // Copy array
+  const available = [...targets];
 
   while (selected.length < numberOfFills && available.length > 0) {
     const totalWeight = available.reduce(
@@ -644,12 +885,11 @@ function weightedRandomSelectionFromTargets(targets, numberOfFills) {
       weightSum += available[i].difficulty;
       if (random <= weightSum) {
         selected.push(available[i]);
-        available.splice(i, 1); // Remove selected item
+        available.splice(i, 1);
         break;
       }
     }
 
-    // Fallback: if weighted selection fails, pick random available item
     if (selected.length < numberOfFills && available.length > 0) {
       const randomIndex = Math.floor(Math.random() * available.length);
       selected.push(available[randomIndex]);
@@ -660,59 +900,20 @@ function weightedRandomSelectionFromTargets(targets, numberOfFills) {
   return selected;
 }
 
-// Calculate weights for items based on difficulty
-function calculateItemWeights(data) {
-  return data.map((item, index) => {
-    const values = Object.values(item);
-    let difficulty = 1;
+function calculateValueDifficulty(value) {
+  const str = value.toString().toLowerCase();
+  let difficulty = 1;
 
-    values.forEach((value) => {
-      const str = value.toString();
+  if (str.includes("°c") || str.includes("°f")) difficulty += 1;
+  if (str.includes("±") || str.includes("+/-")) difficulty += 1;
+  if (str.includes(",")) difficulty += 0.5;
+  if (str.match(/\d+\.\d+/)) difficulty += 0.5;
+  if (str.length > 10) difficulty += 0.5;
+  if (str.includes("isa")) difficulty += 1;
 
-      if (str.includes("°C") || str.includes("°F")) difficulty += 1;
-      if (str.includes("±") || str.includes("+/-")) difficulty += 1;
-      if (str.includes(",")) difficulty += 0.5;
-      if (str.match(/\d+\.\d+/)) difficulty += 0.5;
-      if (str.length > 10) difficulty += 0.5;
-      if (str.includes("ISA")) difficulty += 1;
-    });
-
-    return difficulty;
-  });
+  return Math.min(difficulty, 3);
 }
 
-// Weighted random selection algorithm
-function weightedRandomSelection(totalItems, numberOfFills, weights) {
-  const selected = new Set();
-  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-
-  while (selected.size < numberOfFills && selected.size < totalItems) {
-    let random = Math.random() * totalWeight;
-    let weightSum = 0;
-
-    for (let i = 0; i < weights.length; i++) {
-      weightSum += weights[i];
-      if (random <= weightSum && !selected.has(i)) {
-        selected.add(i);
-        break;
-      }
-    }
-
-    if (selected.size < numberOfFills) {
-      const unselected = Array.from({ length: totalItems }, (_, i) => i).filter(
-        (i) => !selected.has(i)
-      );
-      if (unselected.length > 0) {
-        const randomIndex = Math.floor(Math.random() * unselected.length);
-        selected.add(unselected[randomIndex]);
-      }
-    }
-  }
-
-  return Array.from(selected);
-}
-
-// Create advanced input cell with enhanced features
 function createAdvancedInputCell(cell, correctValue, rowIndex, key) {
   const inputContainer = document.createElement("div");
   inputContainer.className = "input-container advanced";
@@ -725,43 +926,70 @@ function createAdvancedInputCell(cell, correctValue, rowIndex, key) {
   input.setAttribute("data-field", key);
   input.setAttribute("data-difficulty", calculateValueDifficulty(correctValue));
 
-  input.placeholder = generateAdvancedPlaceholder(correctValue);
+  input.placeholder = generateMobilePlaceholder(correctValue);
 
-  const datalistId = `suggestions-${rowIndex}-${key}`;
-  input.setAttribute("list", datalistId);
-  const datalist = createSmartDatalist(datalistId, correctValue);
-  document.body.appendChild(datalist);
+  if (isMobile) {
+    input.setAttribute("autocomplete", "off");
+    input.setAttribute("autocorrect", "off");
+    input.setAttribute("autocapitalize", "off");
+    input.setAttribute("spellcheck", "false");
+
+    if (/\d/.test(correctValue)) {
+      input.setAttribute("inputmode", "decimal");
+    } else {
+      input.setAttribute("inputmode", "text");
+    }
+  }
 
   let hintLevel = 0;
   const maxHints = 3;
+  let startTime = Date.now();
 
   input.addEventListener("input", (e) => {
     handleAdvancedInputChange(e.target);
-
     if (e.target.value.length <= 1) {
       hintLevel = 0;
       e.target.setAttribute("data-hint-level", "0");
     }
   });
 
+  input.addEventListener("focus", (e) => {
+    if (isMobile) {
+      setTimeout(() => {
+        e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+    }
+    startTime = Date.now();
+  });
+
   input.addEventListener("blur", (e) => {
-    if (fillModeConfig.instantFeedback) {
-      handleInputSubmit(e.target);
+    if (fillModeConfig.instantFeedback && e.target.value.trim()) {
+      const timeSpent = Date.now() - startTime;
+      handleInputSubmit(e.target, timeSpent, hintLevel);
     }
   });
 
   input.addEventListener("keypress", (e) => {
+    performanceTracker.keyboardInteractions++;
     if (e.key === "Enter") {
-      handleInputSubmit(e.target);
+      const timeSpent = Date.now() - startTime;
+      handleInputSubmit(e.target, timeSpent, hintLevel);
     }
   });
 
-  input.addEventListener("dblclick", (e) => {
-    if (fillModeConfig.showHints && hintLevel < maxHints) {
-      showProgressiveHint(input, correctValue, hintLevel);
-      hintLevel++;
-      input.setAttribute("data-hint-level", hintLevel.toString());
+  let lastTap = 0;
+  input.addEventListener("touchend", (e) => {
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTap;
+    if (tapLength < 500 && tapLength > 0) {
+      if (fillModeConfig.showHints && hintLevel < maxHints) {
+        e.preventDefault();
+        showProgressiveHint(input, correctValue, hintLevel);
+        hintLevel++;
+        input.setAttribute("data-hint-level", hintLevel.toString());
+      }
     }
+    lastTap = currentTime;
   });
 
   const actionButtons = document.createElement("div");
@@ -772,6 +1000,7 @@ function createAdvancedInputCell(cell, correctValue, rowIndex, key) {
     hintBtn.className = "hint-btn advanced";
     hintBtn.innerHTML = "💡";
     hintBtn.title = `Hint (${hintLevel}/${maxHints})`;
+    hintBtn.setAttribute("aria-label", "Get hint");
     hintBtn.onclick = (e) => {
       e.stopPropagation();
       if (hintLevel < maxHints) {
@@ -793,9 +1022,11 @@ function createAdvancedInputCell(cell, correctValue, rowIndex, key) {
   skipBtn.className = "skip-btn";
   skipBtn.innerHTML = "⏭️";
   skipBtn.title = "Skip this question";
+  skipBtn.setAttribute("aria-label", "Skip question");
   skipBtn.onclick = (e) => {
     e.stopPropagation();
-    skipQuestion(input, correctValue);
+    const timeSpent = Date.now() - startTime;
+    skipQuestion(input, correctValue, timeSpent, hintLevel);
   };
   actionButtons.appendChild(skipBtn);
 
@@ -814,154 +1045,44 @@ function createAdvancedInputCell(cell, correctValue, rowIndex, key) {
   cell.appendChild(inputContainer);
 }
 
-// Calculate difficulty of a specific value
-function calculateValueDifficulty(value) {
-  const str = value.toString().toLowerCase();
-  let difficulty = 1;
-
-  if (str.includes("°c") || str.includes("°f")) difficulty += 1;
-  if (str.includes("±") || str.includes("+/-")) difficulty += 1;
-  if (str.includes(",")) difficulty += 0.5;
-  if (str.match(/\d+\.\d+/)) difficulty += 0.5;
-  if (str.length > 10) difficulty += 0.5;
-  if (str.includes("isa")) difficulty += 1;
-
-  return Math.min(difficulty, 3);
-}
-
-// Enhanced placeholder generation for structural limitations
-function generateAdvancedPlaceholder(correctValue) {
+function generateMobilePlaceholder(correctValue) {
   const value = correctValue.toLowerCase();
   const difficulty = calculateValueDifficulty(correctValue);
 
   let basePlaceholder = "";
 
-  // Enhanced placeholders for structural limitations
   if (currentCategory === "Structural Limitations") {
     if (value.includes("lbs")) {
-      if (
-        value.includes("85,") ||
-        value.includes("74,") ||
-        value.includes("69,")
-      ) {
-        basePlaceholder = "Enter weight (thousands)";
-      } else {
-        basePlaceholder = "Enter weight";
-      }
+      basePlaceholder = isMobile ? "Weight (lbs)" : "Enter weight (thousands)";
     } else if (value.includes("gal")) {
-      basePlaceholder = "Enter fuel capacity";
+      basePlaceholder = isMobile ? "Fuel (gal)" : "Enter fuel capacity";
     } else {
-      basePlaceholder = "Enter weight/volume";
+      basePlaceholder = isMobile ? "Value" : "Enter weight/volume";
     }
-  }
-  // Original logic for other categories
-  else if (value.includes("kias") || value.includes("knots")) {
-    basePlaceholder = "Enter speed";
+  } else if (value.includes("kias") || value.includes("knots")) {
+    basePlaceholder = isMobile ? "Speed" : "Enter speed";
   } else if (value.includes("°c")) {
-    basePlaceholder = "Enter temperature";
+    basePlaceholder = isMobile ? "Temp (°C)" : "Enter temperature";
   } else if (value.includes("lbs")) {
-    basePlaceholder = "Enter weight";
+    basePlaceholder = isMobile ? "Weight" : "Enter weight";
   } else if (value.includes("ft")) {
-    basePlaceholder = "Enter altitude/distance";
+    basePlaceholder = isMobile ? "Altitude/Dist" : "Enter altitude/distance";
   } else if (value.includes("%")) {
-    basePlaceholder = "Enter percentage";
-  } else if (value.includes("gal")) {
-    basePlaceholder = "Enter volume";
+    basePlaceholder = isMobile ? "Percentage" : "Enter percentage";
   } else if (value.includes("psi")) {
-    basePlaceholder = "Enter pressure";
+    basePlaceholder = isMobile ? "Pressure" : "Enter pressure";
   } else {
-    basePlaceholder = "Enter value";
+    basePlaceholder = isMobile ? "Answer" : "Enter value";
   }
 
-  const difficultyStars = "★".repeat(Math.floor(difficulty));
-  return `${basePlaceholder} ${difficultyStars}`;
-}
-
-// Create smart datalist with intelligent suggestions
-function createSmartDatalist(datalistId, correctValue) {
-  const datalist = document.createElement("datalist");
-  datalist.id = datalistId;
-
-  const suggestions = generateSuggestions(correctValue);
-  const additionalSuggestions = generateContextualSuggestions(correctValue);
-
-  [...suggestions, ...additionalSuggestions].forEach((suggestion) => {
-    const option = document.createElement("option");
-    option.value = suggestion;
-    datalist.appendChild(option);
-  });
-
-  return datalist;
-}
-
-// Generate helpful placeholder text
-function generateSuggestions(correctValue) {
-  const suggestions = [];
-  const value = correctValue.toLowerCase();
-
-  const numbers = correctValue.match(/\d+/g);
-  if (numbers) {
-    const mainNumber = numbers[0];
-
-    if (value.includes("ft")) {
-      suggestions.push(
-        `${mainNumber} ft`,
-        `${mainNumber} feet`,
-        `${mainNumber}ft`
-      );
-    }
-    if (value.includes("lbs")) {
-      suggestions.push(
-        `${mainNumber} lbs`,
-        `${mainNumber} pounds`,
-        `${mainNumber}lbs`
-      );
-    }
-    if (value.includes("kias")) {
-      suggestions.push(
-        `${mainNumber} KIAS`,
-        `${mainNumber} knots`,
-        `${mainNumber}kts`
-      );
-    }
-    if (value.includes("°c")) {
-      suggestions.push(
-        `${mainNumber}°C`,
-        `${mainNumber} degrees`,
-        `${mainNumber}°`
-      );
-    }
+  if (isMobile) {
+    return basePlaceholder;
+  } else {
+    const difficultyStars = "★".repeat(Math.floor(difficulty));
+    return `${basePlaceholder} ${difficultyStars}`;
   }
-
-  return suggestions;
 }
 
-// Generate contextual suggestions based on other values in the dataset
-function generateContextualSuggestions(correctValue) {
-  const suggestions = [];
-  const category = limitationsCategories[currentCategory];
-
-  category.data.forEach((item) => {
-    Object.values(item).forEach((value) => {
-      const str = value.toString();
-
-      if (str !== correctValue && str.length > 2) {
-        if (correctValue.includes("ft") && str.includes("ft")) {
-          const number = str.match(/\d+/)?.[0];
-          if (number) suggestions.push(`${number} ft`);
-        }
-        if (correctValue.includes("°C") && str.includes("°C")) {
-          const number = str.match(/-?\d+/)?.[0];
-          if (number) suggestions.push(`${number}°C`);
-        }
-      }
-    });
-  });
-
-  return [...new Set(suggestions)].slice(0, 5);
-}
-
-// Advanced input change handler with progressive feedback
 function handleAdvancedInputChange(input) {
   const userAnswer = input.value;
   const correctAnswer = input.getAttribute("data-correct");
@@ -1022,325 +1143,61 @@ function handleAdvancedInputChange(input) {
   }
 }
 
-// Progressive hint system with increasing levels of help
-function showProgressiveHint(input, correctValue, hintLevel) {
-  const hints = generateProgressiveHints(correctValue, hintLevel);
+// ============================================
+// UI FUNCTIONS
+// ============================================
 
-  if (hints.length === 0) return;
-
-  const hintPopup = document.createElement("div");
-  hintPopup.className = "hint-popup advanced";
-
-  const hintContent = `
-    <div class="hint-content">
-      <div class="hint-title">Hint ${hintLevel + 1}/3</div>
-      <div class="hint-text">${hints[0]}</div>
-      <div class="hint-progress">
-        <div class="hint-dots">
-          ${"●".repeat(hintLevel + 1)}${"○".repeat(2 - hintLevel)}
-        </div>
-      </div>
-      <button class="hint-close" onclick="this.parentElement.parentElement.remove()">Got it!</button>
-    </div>
-  `;
-
-  hintPopup.innerHTML = hintContent;
-  document.body.appendChild(hintPopup);
-
-  const rect = input.getBoundingClientRect();
-  hintPopup.style.position = "fixed";
-  hintPopup.style.top = rect.bottom + 5 + "px";
-  hintPopup.style.left = rect.left + "px";
-  hintPopup.style.zIndex = "1000";
-
-  setTimeout(() => {
-    if (hintPopup.parentElement) {
-      hintPopup.remove();
-    }
-  }, 8000);
-}
-
-// Generate progressive hints that get more specific
-function generateProgressiveHints(correctValue, hintLevel) {
-  const hints = [];
-  const value = correctValue.toLowerCase();
-
-  if (hintLevel === 0) {
-    if (value.includes("ft") || value.includes("feet")) {
-      hints.push("This is a measurement of distance or altitude.");
-    } else if (value.includes("lbs") || value.includes("pounds")) {
-      hints.push("This is a weight measurement.");
-    } else if (value.includes("°c") || value.includes("temperature")) {
-      hints.push("This is a temperature measurement.");
-    } else if (value.includes("kias") || value.includes("knots")) {
-      hints.push("This is a speed measurement.");
-    } else if (value.includes("%")) {
-      hints.push("This is a percentage value.");
-    } else {
-      hints.push("Think about what type of measurement this might be.");
-    }
-  } else if (hintLevel === 1) {
-    const numbers = correctValue.match(/\d+/g);
-    if (numbers && numbers.length > 0) {
-      const mainNumber = parseInt(numbers[0]);
-      if (mainNumber < 100) {
-        hints.push("The number is less than 100.");
-      } else if (mainNumber < 1000) {
-        hints.push("The number is between 100 and 1,000.");
-      } else if (mainNumber < 10000) {
-        hints.push("The number is between 1,000 and 10,000.");
-      } else {
-        hints.push("The number is greater than 10,000.");
-      }
-    } else {
-      hints.push("Think about the typical range for this type of measurement.");
-    }
-  } else if (hintLevel === 2) {
-    if (correctValue.length > 3) {
-      const firstPart = correctValue.substring(
-        0,
-        Math.ceil(correctValue.length * 0.4)
-      );
-      const lastPart = correctValue.substring(
-        Math.floor(correctValue.length * 0.7)
-      );
-      hints.push(
-        `The answer starts with "${firstPart}" and ends with "${lastPart}"`
-      );
-    } else {
-      hints.push(`The answer is: ${correctValue}`);
-    }
-  }
-
-  return hints;
-}
-
-// Skip question functionality
-function skipQuestion(input, correctValue) {
-  const cell = input.closest("td");
-
-  cell.classList.add("skipped");
-
-  const feedback = document.createElement("div");
-  feedback.className = "answer-feedback skipped";
-  feedback.innerHTML = `
-    <div class="skipped-label">SKIPPED</div>
-    <div class="correct-answer">Answer: ${correctValue}</div>
-  `;
-
-  input.style.display = "none";
-  input.parentElement.appendChild(feedback);
-
-  updateProgress();
-}
-
-// Enhanced difficulty display for multi-column data
-function addDifficultySelector() {
-  const existingSelector = document.getElementById("difficulty-selector");
-  if (existingSelector) return;
-
-  const controls = document.querySelector(".controls");
-  const difficultyContainer = document.createElement("div");
-  difficultyContainer.className = "difficulty-container";
-
-  // Dynamic percentage display based on category
-  const isMultiColumn = currentCategory === "Structural Limitations";
-  const baseText = isMultiColumn ? "cells" : "questions";
-
-  difficultyContainer.innerHTML = `
-    <label for="difficulty-select" style="color: #00ff41; margin-right: 10px; font-family: 'JetBrains Mono', monospace;">Difficulty:</label>
-    <select id="difficulty-select" onchange="changeDifficulty()">
-      <option value="easy">Easy (30% ${baseText})</option>
-      <option value="medium" selected>Medium (50% ${baseText})</option>
-      <option value="hard">Hard (70% ${baseText})</option>
-      <option value="expert">Expert (90% ${baseText})</option>
-    </select>
-  `;
-
-  controls.appendChild(difficultyContainer);
-}
-
-// Add fill mode controls
-function addFillModeControls() {
-  const existingControls = document.getElementById("fill-mode-controls");
-  if (existingControls) return;
-
-  const container = document.querySelector(".container");
-  const controlsPanel = document.createElement("div");
-  controlsPanel.id = "fill-mode-controls";
-  controlsPanel.className = "fill-mode-controls";
-  controlsPanel.innerHTML = `
-    <div class="fill-controls-row">
-      <label>
-        <input type="checkbox" id="random-selection" ${
-          fillModeConfig.randomSelection ? "checked" : ""
-        } onchange="toggleRandomSelection()">
-        Random Selection
-      </label>
-      <label>
-        <input type="checkbox" id="show-hints" ${
-          fillModeConfig.showHints ? "checked" : ""
-        } onchange="toggleHints()">
-        Show Hints
-      </label>
-      <label>
-        <input type="checkbox" id="instant-feedback" ${
-          fillModeConfig.instantFeedback ? "checked" : ""
-        } onchange="toggleInstantFeedback()">
-        Instant Feedback
-      </label>
-      <button onclick="regenerateFillMode()" class="btn regenerate-btn">🎲 Regenerate</button>
-    </div>
-  `;
-
-  const timerElement = document.getElementById("timer");
-  container.insertBefore(controlsPanel, timerElement);
-}
-
-// Control functions
-function changeDifficulty() {
-  const select = document.getElementById("difficulty-select");
-  fillModeConfig.difficulty = select.value;
-  if (currentMode === "fill") {
-    createEnhancedFillInMode();
+function showLoadingScreen(show) {
+  const loadingScreen = document.getElementById("loading-screen");
+  if (loadingScreen) {
+    loadingScreen.classList.toggle("active", show);
   }
 }
 
-function toggleRandomSelection() {
-  fillModeConfig.randomSelection =
-    document.getElementById("random-selection").checked;
-  if (currentMode === "fill") {
-    createEnhancedFillInMode();
+function updateStats() {
+  document.getElementById("correct-count").textContent = correctCount;
+  document.getElementById("incorrect-count").textContent = incorrectCount;
+  document.getElementById("streak-count").textContent = streakCount;
+
+  const total = correctCount + incorrectCount;
+  const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+  const accuracyElement = document.getElementById("accuracy-rate");
+  if (accuracyElement) {
+    accuracyElement.textContent = `${accuracy}%`;
   }
 }
 
-function toggleHints() {
-  fillModeConfig.showHints = document.getElementById("show-hints").checked;
-}
+function updateProgress() {
+  let totalCells, completedCells;
 
-function toggleInstantFeedback() {
-  fillModeConfig.instantFeedback =
-    document.getElementById("instant-feedback").checked;
-}
-
-function regenerateFillMode() {
-  if (currentMode === "fill") {
-    resetProgress();
-    createEnhancedFillInMode();
-  }
-}
-
-// Clean up fill mode controls when switching modes
-function cleanupFillModeControls() {
-  const fillControls = document.getElementById("fill-mode-controls");
-  const difficultyContainer = document.querySelector(".difficulty-container");
-
-  if (fillControls) fillControls.remove();
-  if (difficultyContainer) difficultyContainer.remove();
-}
-
-// Show helpful tooltips on first visit to fill mode
-function showFillModeHelp() {
-  if (hasShownFillModeHelp) return;
-  hasShownFillModeHelp = true;
-
-  const helpPopup = document.createElement("div");
-  helpPopup.className = "help-popup";
-  helpPopup.innerHTML = `
-    <div style="
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.95);
-      border: 2px solid #00ff41;
-      padding: 20px;
-      max-width: 400px;
-      z-index: 2000;
-      font-family: 'JetBrains Mono', monospace;
-      color: #00ff41;
-    ">
-      <h3 style="margin-bottom: 15px; color: #ffffff;">🚀 Enhanced Fill-in Mode</h3>
-      <div style="font-size: 0.85rem; line-height: 1.4; margin-bottom: 15px;">
-        <p><strong>💡 Hints:</strong> Click the hint button or press Ctrl+H</p>
-        <p><strong>⏭️ Skip:</strong> Click skip button or press Ctrl+S</p>
-        <p><strong>⌨️ Navigation:</strong> Use Tab/Shift+Tab to move between fields</p>
-        <p><strong>🎯 Difficulty:</strong> Adjust difficulty to change how many questions appear</p>
-        <p><strong>🎲 Regenerate:</strong> Get a new random selection of questions</p>
-      </div>
-      <button onclick="this.parentElement.parentElement.remove()" style="
-        background: rgba(0, 255, 65, 0.1);
-        border: 1px solid #00ff41;
-        color: #00ff41;
-        padding: 8px 16px;
-        cursor: pointer;
-        font-family: 'JetBrains Mono', monospace;
-        width: 100%;
-      ">Got it!</button>
-    </div>
-  `;
-
-  document.body.appendChild(helpPopup);
-
-  setTimeout(() => {
-    if (helpPopup.parentElement) {
-      helpPopup.remove();
-    }
-  }, 10000);
-}
-
-// Enhanced fill-in mode with help
-function createEnhancedFillInModeWithHelp() {
-  createEnhancedFillInMode();
-  setTimeout(showFillModeHelp, 1000);
-}
-
-// Handle real-time input changes (original function for compatibility)
-function handleInputChange(input) {
-  const userAnswer = input.value;
-  const correctAnswer = input.getAttribute("data-correct");
-  const indicator = input.parentElement.querySelector(".validation-indicator");
-
-  if (!indicator) return;
-
-  if (userAnswer.length === 0) {
-    indicator.className = "validation-indicator";
-    indicator.innerHTML = "";
-    return;
-  }
-
-  const result = smartAnswerCheck(userAnswer, correctAnswer);
-
-  if (result.isCorrect) {
-    if (result.score === 100) {
-      indicator.className = "validation-indicator perfect";
-      indicator.innerHTML = "✓";
-    } else if (result.score >= 90) {
-      indicator.className = "validation-indicator good";
-      indicator.innerHTML = "✓";
-    } else {
-      indicator.className = "validation-indicator close";
-      indicator.innerHTML = "~";
-    }
+  if (currentCategory === "Memory Items") {
+    totalCells = document.querySelectorAll(".memory-item").length;
+    completedCells = document.querySelectorAll(
+      ".memory-correct, .memory-incorrect"
+    ).length;
   } else {
-    if (userAnswer.length > 2) {
-      const similarity = calculateSimilarity(userAnswer, correctAnswer);
-      if (similarity > 0.5) {
-        indicator.className = "validation-indicator partial";
-        indicator.innerHTML = "?";
-      } else {
-        indicator.className = "validation-indicator wrong";
-        indicator.innerHTML = "✗";
-      }
-    } else {
-      indicator.className = "validation-indicator";
-      indicator.innerHTML = "";
-    }
+    totalCells = document.querySelectorAll(
+      ".limitation-cell, .fill-mode-cell"
+    ).length;
+    completedCells = document.querySelectorAll(
+      ".limitation-cell.correct, .limitation-cell.incorrect, .fill-mode-cell.correct, .fill-mode-cell.incorrect, .fill-mode-cell.skipped"
+    ).length;
+  }
+
+  const progress = totalCells > 0 ? (completedCells / totalCells) * 100 : 0;
+  const progressFill = document.getElementById("progress-fill");
+  const progressText = document.getElementById("progress-text");
+
+  if (progressFill) {
+    progressFill.style.width = progress + "%";
+  }
+
+  if (progressText) {
+    progressText.textContent = Math.round(progress) + "%";
   }
 }
 
-// Handle input submission
-function handleInputSubmit(input) {
+function handleInputSubmit(input, timeSpent = 0, hintsUsed = 0) {
   const userAnswer = input.value.trim();
   const correctAnswer = input.getAttribute("data-correct");
   const cell = input.closest("td");
@@ -1348,6 +1205,8 @@ function handleInputSubmit(input) {
   if (!cell || userAnswer === "") return;
 
   const result = smartAnswerCheck(userAnswer, correctAnswer);
+
+  trackPerformance(result.isCorrect, hintsUsed, timeSpent);
 
   const existingFeedback = cell.querySelector(".answer-feedback");
   if (existingFeedback) {
@@ -1360,10 +1219,22 @@ function handleInputSubmit(input) {
 
     const feedback = document.createElement("div");
     feedback.className = "answer-feedback";
-    feedback.innerHTML = `
-      <div class="user-answer">${userAnswer}</div>
-      <div class="score">Score: ${result.score}%</div>
-    `;
+
+    if (isMobile) {
+      feedback.innerHTML = `
+        <div class="user-answer">✅ ${userAnswer}</div>
+        ${
+          result.score === 100
+            ? '<div class="score">Perfect! 🎉</div>'
+            : `<div class="score">${result.score}%</div>`
+        }
+      `;
+    } else {
+      feedback.innerHTML = `
+        <div class="user-answer">${userAnswer}</div>
+        <div class="score">Score: ${result.score}%</div>
+      `;
+    }
 
     input.style.display = "none";
     input.parentElement.appendChild(feedback);
@@ -1373,6 +1244,9 @@ function handleInputSubmit(input) {
 
     if (result.score === 100) {
       showBonusAnimation(cell);
+      if (isMobile && navigator.vibrate) {
+        navigator.vibrate(50);
+      }
     }
   } else {
     cell.classList.add("incorrect");
@@ -1380,16 +1254,28 @@ function handleInputSubmit(input) {
 
     const feedback = document.createElement("div");
     feedback.className = "answer-feedback incorrect";
-    feedback.innerHTML = `
-      <div class="user-answer wrong">Your answer: ${userAnswer}</div>
-      <div class="correct-answer">Correct: ${correctAnswer}</div>
-    `;
+
+    if (isMobile) {
+      feedback.innerHTML = `
+        <div class="user-answer wrong">❌ ${userAnswer}</div>
+        <div class="correct-answer">✅ ${correctAnswer}</div>
+      `;
+    } else {
+      feedback.innerHTML = `
+        <div class="user-answer wrong">Your answer: ${userAnswer}</div>
+        <div class="correct-answer">Correct: ${correctAnswer}</div>
+      `;
+    }
 
     input.style.display = "none";
     input.parentElement.appendChild(feedback);
 
     incorrectCount++;
     streakCount = 0;
+
+    if (isMobile && navigator.vibrate) {
+      navigator.vibrate([100, 50, 100]);
+    }
   }
 
   updateStats();
@@ -1397,11 +1283,56 @@ function handleInputSubmit(input) {
   saveProgress();
 }
 
-// Show bonus animation for perfect answers
+function skipQuestion(input, correctValue, timeSpent = 0, hintsUsed = 0) {
+  const cell = input.closest("td");
+
+  cell.classList.add("skipped");
+
+  const feedback = document.createElement("div");
+  feedback.className = "answer-feedback skipped";
+
+  if (isMobile) {
+    feedback.innerHTML = `
+      <div class="skipped-label">⏭️ SKIPPED</div>
+      <div class="correct-answer">Answer: ${correctValue}</div>
+    `;
+  } else {
+    feedback.innerHTML = `
+      <div class="skipped-label">SKIPPED</div>
+      <div class="correct-answer">Answer: ${correctValue}</div>
+    `;
+  }
+
+  input.style.display = "none";
+  input.parentElement.appendChild(feedback);
+
+  trackPerformance(false, hintsUsed, timeSpent);
+  updateProgress();
+  saveProgress();
+}
+
+function trackPerformance(wasCorrect, hintsUsed, timeSpent) {
+  performanceTracker.totalAttempts++;
+  if (wasCorrect) performanceTracker.correctAnswers++;
+
+  performanceTracker.averageHintsUsed =
+    (performanceTracker.averageHintsUsed *
+      (performanceTracker.totalAttempts - 1) +
+      hintsUsed) /
+    performanceTracker.totalAttempts;
+
+  performanceTracker.averageTimePerQuestion =
+    (performanceTracker.averageTimePerQuestion *
+      (performanceTracker.totalAttempts - 1) +
+      timeSpent) /
+    performanceTracker.totalAttempts;
+}
+
 function showBonusAnimation(cell) {
   const bonus = document.createElement("div");
   bonus.className = "bonus-animation";
-  bonus.textContent = "+PERFECT!";
+  bonus.textContent = isMobile ? "🎉 PERFECT!" : "+PERFECT!";
+  bonus.style.fontSize = isMobile ? "0.7rem" : "0.8rem";
   cell.appendChild(bonus);
 
   setTimeout(() => {
@@ -1409,19 +1340,123 @@ function showBonusAnimation(cell) {
   }, 2000);
 }
 
+// ============================================
+// MAIN APPLICATION FUNCTIONS
+// ============================================
+
 function init() {
+  detectDeviceCapabilities();
+  showLoadingScreen(true);
+
   populateTable();
   updateStats();
   loadProgress();
+
+  window.addEventListener("resize", debounce(handleResize, 250));
+  window.addEventListener(
+    "orientationchange",
+    debounce(handleOrientationChange, 500)
+  );
+
+  if (isMobile) {
+    setupMobileEventListeners();
+  }
+
+  showLoadingScreen(false);
+}
+
+function setupMobileEventListeners() {
+  document.addEventListener("touchend", function (e) {
+    if (e.target.matches("button, .btn, .hint-btn, .skip-btn")) {
+      e.preventDefault();
+    }
+  });
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", handleVirtualKeyboard);
+  }
+}
+
+function handleVirtualKeyboard() {
+  const viewport = window.visualViewport;
+  const keyboardHeight = window.innerHeight - viewport.height;
+
+  if (keyboardHeight > 100) {
+    document.body.style.paddingBottom = `${keyboardHeight}px`;
+
+    const activeInput = document.activeElement;
+    if (activeInput && activeInput.classList.contains("enhanced-input-cell")) {
+      setTimeout(() => {
+        activeInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+    }
+  } else {
+    document.body.style.paddingBottom = "";
+  }
+}
+
+function handleResize() {
+  detectDeviceCapabilities();
+  updateTableLayout();
+}
+
+function handleOrientationChange() {
+  setTimeout(() => {
+    detectDeviceCapabilities();
+    updateTableLayout();
+
+    if (mobileMenuOpen) {
+      toggleMobileMenu();
+      setTimeout(toggleMobileMenu, 100);
+    }
+  }, 100);
+}
+
+function updateTableLayout() {
+  const tableContainer = document.querySelector(".table-container");
+  const table = document.querySelector("#limitations-table");
+
+  if (tableContainer && table) {
+    if (isMobile && isLandscape) {
+      tableContainer.style.maxHeight = "40vh";
+      tableContainer.style.overflowY = "auto";
+    } else {
+      tableContainer.style.maxHeight = "";
+      tableContainer.style.overflowY = "";
+    }
+  }
+}
+
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
 }
 
 function changeCategory() {
-  currentCategory = document.getElementById("category-select").value;
-  populateTable();
-  resetProgress();
+  const newCategory = document.getElementById("category-select").value;
+  if (newCategory !== currentCategory) {
+    currentCategory = newCategory;
+
+    const mobileSelect = document.getElementById("mobile-mode-select");
+    if (mobileSelect) {
+      mobileSelect.value = currentMode;
+    }
+
+    populateTable();
+    resetProgress();
+  }
 }
 
 function populateTable() {
+  showLoadingScreen(true);
+
   const category = limitationsCategories[currentCategory];
   const thead = document.getElementById("table-head");
   const tbody = document.getElementById("table-body");
@@ -1431,13 +1466,19 @@ function populateTable() {
 
   if (currentCategory === "Memory Items") {
     populateMemoryItems();
+    showLoadingScreen(false);
     return;
   }
 
   const headerRow = document.createElement("tr");
-  category.columns.forEach((column) => {
+  category.columns.forEach((column, index) => {
     const th = document.createElement("th");
     th.textContent = column;
+
+    if (isMobile && index > 0) {
+      th.style.minWidth = "100px";
+    }
+
     headerRow.appendChild(th);
   });
   thead.appendChild(headerRow);
@@ -1458,8 +1499,18 @@ function populateTable() {
         cell.setAttribute("data-field", key);
         cell.onclick = () => handleCellClick(cell);
         cell.textContent = currentMode === "study" ? item[key] : "";
+
+        if (isMobile) {
+          cell.style.minHeight = "44px";
+          cell.style.padding = "12px 8px";
+        }
       } else {
         cell.textContent = item[key];
+
+        if (isMobile && item[key].length > 20) {
+          cell.title = item[key];
+          cell.textContent = item[key].substring(0, 17) + "...";
+        }
       }
 
       row.appendChild(cell);
@@ -1470,6 +1521,8 @@ function populateTable() {
   if (currentMode === "quiz") {
     hideRandomCells();
   }
+
+  showLoadingScreen(false);
 }
 
 function populateMemoryItems() {
@@ -1536,6 +1589,11 @@ function populateMemoryItems() {
           itemDiv.setAttribute("data-answer", memoryItem);
           itemDiv.textContent = "[CLASSIFIED]";
           itemDiv.onclick = () => handleMemoryClick(itemDiv);
+
+          if (isMobile) {
+            itemDiv.style.minHeight = "44px";
+            itemDiv.style.padding = "12px";
+          }
         }
       } else if (currentMode === "fill") {
         const parts = memoryItem.split(" ....... ");
@@ -1549,8 +1607,16 @@ function populateMemoryItems() {
         const input = document.createElement("input");
         input.type = "text";
         input.className = "memory-input";
-        input.placeholder = "Enter action...";
+        input.placeholder = isMobile ? "Action..." : "Enter action...";
         input.setAttribute("data-answer", parts[1] || "");
+
+        if (isMobile) {
+          input.setAttribute("autocomplete", "off");
+          input.setAttribute("autocorrect", "off");
+          input.setAttribute("autocapitalize", "off");
+          input.style.minHeight = "44px";
+        }
+
         input.addEventListener("blur", () => checkMemoryAnswer(input));
         input.addEventListener("keypress", (e) => {
           if (e.key === "Enter") {
@@ -1586,6 +1652,10 @@ function handleMemoryClick(element) {
     streakCount++;
     updateStats();
     updateProgress();
+
+    if (isMobile && navigator.vibrate) {
+      navigator.vibrate(50);
+    }
   }
 }
 
@@ -1597,13 +1667,22 @@ function checkMemoryAnswer(input) {
     input.parentElement.classList.add("memory-correct");
     correctCount++;
     streakCount++;
+
+    if (isMobile && navigator.vibrate) {
+      navigator.vibrate(50);
+    }
   } else if (userAnswer !== "") {
     input.parentElement.classList.add("memory-incorrect");
     incorrectCount++;
     streakCount = 0;
+
+    if (isMobile && navigator.vibrate) {
+      navigator.vibrate([100, 50, 100]);
+    }
   }
   updateStats();
   updateProgress();
+  saveProgress();
 }
 
 function handleCellClick(cell) {
@@ -1622,13 +1701,19 @@ function handleCellClick(cell) {
     streakCount++;
     updateStats();
     updateProgress();
+
+    if (isMobile && navigator.vibrate) {
+      navigator.vibrate(50);
+    }
   }
 }
 
 function hideRandomCells() {
   const cells = document.querySelectorAll(".limitation-cell");
+  const hidePercentage = isMobile ? 0.6 : 0.7;
+
   cells.forEach((cell) => {
-    if (Math.random() < 0.7) {
+    if (Math.random() < hidePercentage) {
       cell.classList.add("hidden");
       cell.textContent = "";
     }
@@ -1647,15 +1732,22 @@ function setMode(mode) {
     cleanupFillModeControls();
   }
 
+  // Update desktop controls
   document
-    .querySelectorAll(".btn")
+    .querySelectorAll(".desktop-controls .btn")
     .forEach((btn) => btn.classList.remove("active"));
-  const buttons = document.querySelectorAll(".btn");
+  const buttons = document.querySelectorAll(".desktop-controls .btn");
   buttons.forEach((btn) => {
     if (btn.onclick && btn.onclick.toString().includes(`'${mode}'`)) {
       btn.classList.add("active");
     }
   });
+
+  // Update mobile mode selector
+  const mobileSelect = document.getElementById("mobile-mode-select");
+  if (mobileSelect) {
+    mobileSelect.value = mode;
+  }
 
   if (mode === "timer") {
     startTimer();
@@ -1666,7 +1758,7 @@ function setMode(mode) {
 
   if (mode === "fill") {
     console.log("Setting enhanced fill mode...");
-    createEnhancedFillInModeWithHelp();
+    createEnhancedFillInMode();
   } else {
     populateTable();
   }
@@ -1688,36 +1780,12 @@ function startTimer() {
 
     if (timeRemaining <= 0) {
       clearInterval(timerInterval);
-      alert("Time's up! How did you do?");
+      const message = isMobile
+        ? "⏰ Time's up! How did you do?"
+        : "Time's up! How did you do?";
+      alert(message);
     }
   }, 1000);
-}
-
-function updateStats() {
-  document.getElementById("correct-count").textContent = correctCount;
-  document.getElementById("incorrect-count").textContent = incorrectCount;
-  document.getElementById("streak-count").textContent = streakCount;
-}
-
-function updateProgress() {
-  let totalCells, completedCells;
-
-  if (currentCategory === "Memory Items") {
-    totalCells = document.querySelectorAll(".memory-item").length;
-    completedCells = document.querySelectorAll(
-      ".memory-correct, .memory-incorrect"
-    ).length;
-  } else {
-    totalCells = document.querySelectorAll(
-      ".limitation-cell, .fill-mode-cell"
-    ).length;
-    completedCells = document.querySelectorAll(
-      ".limitation-cell.correct, .limitation-cell.incorrect, .fill-mode-cell.correct, .fill-mode-cell.incorrect, .fill-mode-cell.skipped"
-    ).length;
-  }
-
-  const progress = totalCells > 0 ? (completedCells / totalCells) * 100 : 0;
-  document.getElementById("progress-fill").style.width = progress + "%";
 }
 
 function resetProgress() {
@@ -1727,27 +1795,132 @@ function resetProgress() {
   updateStats();
   populateTable();
   document.getElementById("progress-fill").style.width = "0%";
+  const progressText = document.getElementById("progress-text");
+  if (progressText) {
+    progressText.textContent = "0%";
+  }
   saveProgress();
+
+  if (isMobile && navigator.vibrate) {
+    navigator.vibrate(30);
+  }
 }
 
-function trackPerformance(wasCorrect, hintsUsed, timeSpent) {
-  performanceTracker.totalAttempts++;
-  if (wasCorrect) performanceTracker.correctAnswers++;
+// ============================================
+// FILL MODE CONTROLS
+// ============================================
 
-  performanceTracker.averageHintsUsed =
-    (performanceTracker.averageHintsUsed *
-      (performanceTracker.totalAttempts - 1) +
-      hintsUsed) /
-    performanceTracker.totalAttempts;
+function addDifficultySelector() {
+  const existingSelector = document.getElementById("difficulty-selector");
+  if (existingSelector) return;
 
-  performanceTracker.averageTimePerQuestion =
-    (performanceTracker.averageTimePerQuestion *
-      (performanceTracker.totalAttempts - 1) +
-      timeSpent) /
-    performanceTracker.totalAttempts;
+  const controls = document.querySelector(".controls-container");
+  const difficultyContainer = document.createElement("div");
+  difficultyContainer.className = "difficulty-container";
+  difficultyContainer.id = "difficulty-selector";
+
+  const isMultiColumn = currentCategory === "Structural Limitations";
+  const baseText = isMultiColumn ? "cells" : "questions";
+
+  difficultyContainer.innerHTML = `
+    <label for="difficulty-select">Difficulty:</label>
+    <select id="difficulty-select" onchange="changeDifficulty()">
+      <option value="easy">Easy (25% ${baseText})</option>
+      <option value="medium" selected>Medium (40% ${baseText})</option>
+      <option value="hard">Hard (60% ${baseText})</option>
+      <option value="expert">Expert (80% ${baseText})</option>
+    </select>
+  `;
+
+  controls.appendChild(difficultyContainer);
 }
 
-function enhancedSaveProgress() {
+function addFillModeControls() {
+  const existingControls = document.getElementById("fill-mode-controls");
+  if (existingControls) return;
+
+  const container = document.querySelector(".container");
+  const controlsPanel = document.createElement("div");
+  controlsPanel.id = "fill-mode-controls";
+  controlsPanel.className = "fill-mode-controls";
+
+  const controlsHTML = `
+    <div class="fill-controls-row">
+      <label>
+        <input type="checkbox" id="random-selection" ${
+          fillModeConfig.randomSelection ? "checked" : ""
+        } onchange="toggleRandomSelection()">
+        Random Selection
+      </label>
+      <label>
+        <input type="checkbox" id="show-hints" ${
+          fillModeConfig.showHints ? "checked" : ""
+        } onchange="toggleHints()">
+        ${isMobile ? "Hints" : "Show Hints"}
+      </label>
+      <label>
+        <input type="checkbox" id="instant-feedback" ${
+          fillModeConfig.instantFeedback ? "checked" : ""
+        } onchange="toggleInstantFeedback()">
+        ${isMobile ? "Auto Check" : "Instant Feedback"}
+      </label>
+      <button onclick="regenerateFillMode()" class="btn regenerate-btn">
+        ${isMobile ? "🎲 New" : "🎲 Regenerate"}
+      </button>
+    </div>
+  `;
+
+  controlsPanel.innerHTML = controlsHTML;
+
+  const statsContainer = document.querySelector(".stats-container");
+  container.insertBefore(controlsPanel, statsContainer.nextSibling);
+}
+
+function changeDifficulty() {
+  const select = document.getElementById("difficulty-select");
+  fillModeConfig.difficulty = select.value;
+  if (currentMode === "fill") {
+    createEnhancedFillInMode();
+  }
+}
+
+function toggleRandomSelection() {
+  fillModeConfig.randomSelection =
+    document.getElementById("random-selection").checked;
+  if (currentMode === "fill") {
+    createEnhancedFillInMode();
+  }
+}
+
+function toggleHints() {
+  fillModeConfig.showHints = document.getElementById("show-hints").checked;
+}
+
+function toggleInstantFeedback() {
+  fillModeConfig.instantFeedback =
+    document.getElementById("instant-feedback").checked;
+}
+
+function regenerateFillMode() {
+  if (currentMode === "fill") {
+    resetProgress();
+    createEnhancedFillInMode();
+  }
+}
+
+function cleanupFillModeControls() {
+  const fillControls = document.getElementById("fill-mode-controls");
+  const difficultyContainer = document.getElementById("difficulty-selector");
+
+  if (fillControls) fillControls.remove();
+  if (difficultyContainer) difficultyContainer.remove();
+}
+
+// ============================================
+// ENHANCED SAVE/LOAD WITH MOBILE OPTIMIZATION
+// ============================================
+
+function saveProgress() {
   savedProgress = {
     correctCount,
     incorrectCount,
@@ -1757,6 +1930,13 @@ function enhancedSaveProgress() {
     fillModeConfig: fillModeConfig,
     performanceTracker: performanceTracker,
     hasShownFillModeHelp: hasShownFillModeHelp,
+    deviceInfo: {
+      isMobile,
+      isTablet,
+      isLandscape,
+      userAgent: navigator.userAgent.substring(0, 100),
+    },
+    timestamp: Date.now(),
   };
 
   try {
@@ -1769,64 +1949,62 @@ function enhancedSaveProgress() {
   }
 }
 
-function enhancedLoadProgress() {
+function loadProgress() {
   try {
     const saved = localStorage.getItem("aircraftLimitsProgress");
     if (saved) {
       const parsedProgress = JSON.parse(saved);
 
-      correctCount = parsedProgress.correctCount || 0;
-      incorrectCount = parsedProgress.incorrectCount || 0;
-      streakCount = parsedProgress.streakCount || 0;
-      currentCategory = parsedProgress.category || "Structural Limitations";
+      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      if (parsedProgress.timestamp && parsedProgress.timestamp > sevenDaysAgo) {
+        correctCount = parsedProgress.correctCount || 0;
+        incorrectCount = parsedProgress.incorrectCount || 0;
+        streakCount = parsedProgress.streakCount || 0;
+        currentCategory = parsedProgress.category || "Structural Limitations";
 
-      if (parsedProgress.fillModeConfig) {
-        fillModeConfig = {
-          ...fillModeConfig,
-          ...parsedProgress.fillModeConfig,
-        };
+        if (parsedProgress.fillModeConfig) {
+          fillModeConfig = {
+            ...fillModeConfig,
+            ...parsedProgress.fillModeConfig,
+          };
+        }
+
+        if (parsedProgress.performanceTracker) {
+          performanceTracker = {
+            ...performanceTracker,
+            ...parsedProgress.performanceTracker,
+          };
+        }
+
+        hasShownFillModeHelp = parsedProgress.hasShownFillModeHelp || false;
+
+        document.getElementById("category-select").value = currentCategory;
+        updateStats();
       }
-
-      if (parsedProgress.performanceTracker) {
-        performanceTracker = {
-          ...performanceTracker,
-          ...parsedProgress.performanceTracker,
-        };
-      }
-
-      hasShownFillModeHelp = parsedProgress.hasShownFillModeHelp || false;
-
-      document.getElementById("category-select").value = currentCategory;
-      updateStats();
     }
   } catch (e) {
     console.log("Could not load progress from localStorage");
-    if (savedProgress) {
-      correctCount = savedProgress.correctCount || 0;
-      incorrectCount = savedProgress.incorrectCount || 0;
-      streakCount = savedProgress.streakCount || 0;
-      currentCategory = savedProgress.category || "Structural Limitations";
-      document.getElementById("category-select").value = currentCategory;
-      updateStats();
-    }
   }
 }
 
-function saveProgress() {
-  enhancedSaveProgress();
-}
+// ============================================
+// ENHANCED KEYBOARD SHORTCUTS WITH MOBILE SUPPORT
+// ============================================
 
-function loadProgress() {
-  enhancedLoadProgress();
-}
-
-// Add keyboard shortcuts for better UX
 document.addEventListener("keydown", (e) => {
   if (currentMode !== "fill") return;
 
   const activeInput = document.activeElement;
   if (!activeInput || !activeInput.classList.contains("enhanced-input-cell"))
     return;
+
+  if (
+    isMobile &&
+    window.visualViewport &&
+    window.visualViewport.height < window.innerHeight * 0.75
+  ) {
+    return;
+  }
 
   if ((e.ctrlKey || e.metaKey) && e.key === "h") {
     e.preventDefault();
@@ -1869,4 +2047,21 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-document.addEventListener("DOMContentLoaded", init);
+// ============================================
+// COMPATIBILITY FUNCTIONS
+// ============================================
+
+// Original functions for compatibility with existing HTML onclick handlers
+function handleInputChange(input) {
+  handleAdvancedInputChange(input);
+}
+
+// ============================================
+// INITIALIZE APPLICATION
+// ============================================
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
