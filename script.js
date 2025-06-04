@@ -767,6 +767,7 @@ function handleTableClick(e) {
     target.classList.add("correct");
     appState.correctCount++;
     appState.streakCount++;
+    showFeedback("correct", "✅ Nice!");
     updateStats();
     updateProgress();
     saveProgress();
@@ -797,13 +798,18 @@ function handleTableClick(e) {
       }
     });
 
-    // Update stats
+    // Update stats and show feedback
     if (selectedValue === correctAnswer) {
       appState.correctCount++;
       appState.streakCount++;
+      showFeedback("correct", "✅ Correct!");
     } else {
       appState.incorrectCount++;
       appState.streakCount = 0;
+      showFeedback(
+        "incorrect",
+        `❌ Incorrect! The answer is: ${correctAnswer}`
+      );
     }
 
     updateStats();
@@ -821,6 +827,7 @@ function handleTableClick(e) {
     target.classList.add("memory-correct");
     appState.correctCount++;
     appState.streakCount++;
+    showFeedback("correct", "✅ Got it!");
     updateStats();
     updateProgress();
     saveProgress();
@@ -852,11 +859,13 @@ function checkDropdownAnswer(dropdown) {
     cell.classList.add("correct");
     appState.correctCount++;
     appState.streakCount++;
+    showFeedback("correct", "✅ Perfect!");
   } else if (selectedValue !== "") {
     cell.innerHTML = `<s>${selectedValue}</s><br><strong>${correctAnswer}</strong>`;
     cell.classList.add("incorrect");
     appState.incorrectCount++;
     appState.streakCount = 0;
+    showFeedback("incorrect", `❌ Try again! The answer is: ${correctAnswer}`);
   }
 
   updateStats();
@@ -875,16 +884,98 @@ function checkAnswer(input) {
     cell.classList.add("correct");
     appState.correctCount++;
     appState.streakCount++;
+    showFeedback("correct", "✅ Excellent!");
   } else {
     cell.innerHTML = `<s>${input.value}</s><br><strong>${input.dataset.answer}</strong>`;
     cell.classList.add("incorrect");
     appState.incorrectCount++;
     appState.streakCount = 0;
+    showFeedback(
+      "incorrect",
+      `❌ Close! The answer is: ${input.dataset.answer}`
+    );
   }
 
   updateStats();
   updateProgress();
   saveProgress();
+}
+
+// Show user feedback
+function showFeedback(type, message) {
+  // Remove existing feedback
+  const existingFeedback = document.querySelector(".feedback-toast");
+  if (existingFeedback) {
+    existingFeedback.remove();
+  }
+
+  // Create feedback toast
+  const feedback = document.createElement("div");
+  feedback.className = `feedback-toast feedback-${type}`;
+  feedback.textContent = message;
+
+  // Add to page
+  document.body.appendChild(feedback);
+
+  // Show with animation
+  setTimeout(() => feedback.classList.add("show"), 10);
+
+  // Auto-hide after 2 seconds
+  setTimeout(() => {
+    feedback.classList.remove("show");
+    setTimeout(() => feedback.remove(), 300);
+  }, 2000);
+
+  // Add haptic feedback on mobile
+  if (navigator.vibrate) {
+    if (type === "correct") {
+      navigator.vibrate(50); // Short vibration for correct
+    } else {
+      navigator.vibrate([100, 50, 100]); // Pattern for incorrect
+    }
+  }
+}
+
+// Show streak celebrations
+function showStreakCelebration(streak) {
+  if (streak === 5) {
+    showFeedback("streak", "🔥 5 in a row! You're on fire!");
+  } else if (streak === 10) {
+    showFeedback("streak", "⚡ 10 streak! Incredible!");
+  } else if (streak === 20) {
+    showFeedback("streak", "🎯 20 streak! You're a legend!");
+  } else if (streak % 25 === 0 && streak > 0) {
+    showFeedback("streak", `🏆 ${streak} streak! Absolutely amazing!`);
+  }
+}
+
+// Show category completion
+function showCategoryCompletion() {
+  const totalCells = elements.tableContainer.querySelectorAll(
+    ".limitation-cell, .input-cell, .memory-hidden, .multiple-choice-options, .choice-dropdown"
+  ).length;
+  const completedCells = elements.tableContainer.querySelectorAll(
+    ".correct, .incorrect, .memory-correct, .multiple-choice-options:has(input[type='radio']:disabled)"
+  ).length;
+
+  if (totalCells > 0 && completedCells === totalCells) {
+    const accuracy = Math.round(
+      (appState.correctCount /
+        (appState.correctCount + appState.incorrectCount)) *
+        100
+    );
+    let message = "🎉 Category Complete!";
+
+    if (accuracy >= 95) {
+      message = "🏆 Perfect! Category mastered!";
+    } else if (accuracy >= 80) {
+      message = "⭐ Great job! Category completed!";
+    } else if (accuracy >= 60) {
+      message = "👍 Good work! Category completed!";
+    }
+
+    showFeedback("completion", `${message} (${accuracy}% accuracy)`);
+  }
 }
 
 // Regenerate fill mode
@@ -902,6 +993,9 @@ function updateStats() {
   const accuracy =
     total > 0 ? Math.round((appState.correctCount / total) * 100) : 0;
   elements.accuracyRate.textContent = `${accuracy}%`;
+
+  // Show streak celebrations
+  showStreakCelebration(appState.streakCount);
 }
 
 // Update progress
@@ -916,6 +1010,9 @@ function updateProgress() {
   const progress = totalCells > 0 ? (completedCells / totalCells) * 100 : 0;
   elements.progressFill.style.width = `${progress}%`;
   elements.progressText.textContent = `${Math.round(progress)}%`;
+
+  // Check for category completion
+  showCategoryCompletion();
 }
 
 // Start timer
