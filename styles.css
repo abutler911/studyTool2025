@@ -434,6 +434,106 @@ tr:hover td {
   font-weight: 600;
 }
 
+/* Multiple Choice Styles */
+.multiple-choice-cell {
+  padding: var(--space-sm);
+}
+
+.multiple-choice-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 200px;
+}
+
+.choice-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  background: var(--bg-secondary);
+}
+
+.choice-option:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-primary);
+}
+
+.choice-option input[type="radio"] {
+  margin: 0;
+  accent-color: var(--accent-primary);
+}
+
+.choice-option input[type="radio"]:disabled {
+  cursor: not-allowed;
+}
+
+.choice-text {
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.choice-option.correct-choice {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--accent-success);
+  color: var(--accent-success);
+}
+
+.choice-option.correct-choice .choice-text {
+  color: var(--accent-success);
+  font-weight: 600;
+}
+
+.choice-option.incorrect-choice {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--accent-error);
+  color: var(--accent-error);
+}
+
+.choice-option.incorrect-choice .choice-text {
+  color: var(--accent-error);
+  font-weight: 600;
+}
+
+.choice-option.disabled-choice {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.choice-option.disabled-choice .choice-text {
+  color: var(--text-muted);
+}
+
+/* Dropdown Styles */
+.choice-dropdown {
+  width: 100%;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.choice-dropdown:hover {
+  border-color: var(--accent-primary);
+  background: var(--bg-hover);
+}
+
+.choice-dropdown:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
 /* Mobile FAB */
 .mobile-fab {
   position: fixed;
@@ -783,6 +883,18 @@ tr:hover td {
   .fill-mode-controls {
     flex-direction: column;
     gap: var(--space-sm);
+  }
+
+  .multiple-choice-options {
+    min-width: unset;
+  }
+
+  .choice-option {
+    padding: var(--space-xs);
+  }
+
+  .choice-text {
+    font-size: var(--font-xs);
   }
 }
 
