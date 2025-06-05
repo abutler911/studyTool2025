@@ -811,6 +811,159 @@ tr:hover td {
   }
 }
 
+/* Memory Aids Styling */
+.memory-aids-container {
+  margin-bottom: var(--space-lg);
+}
+
+.memory-techniques-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-md);
+}
+
+.memory-aid-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: var(--space-lg);
+  transition: all var(--transition-base);
+}
+
+.memory-aid-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent-primary);
+}
+
+.memory-aid-card h3 {
+  color: var(--accent-primary);
+  margin-bottom: var(--space-md);
+  font-size: var(--font-lg);
+  font-weight: 600;
+}
+
+.technique-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.technique-item {
+  padding: var(--space-sm);
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent-primary);
+}
+
+.weight-highlight {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--accent-success);
+  background: rgba(16, 185, 129, 0.1);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 4px;
+  display: inline-block;
+  margin: var(--space-xs) 0;
+}
+
+.mnemonic {
+  color: var(--accent-warning);
+  font-style: italic;
+  font-size: var(--font-sm);
+}
+
+.visualization {
+  color: var(--accent-purple);
+  font-size: var(--font-sm);
+}
+
+.weight-patterns-card {
+  grid-column: 1 / -1;
+}
+
+.patterns-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-md);
+}
+
+.pattern-item {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: var(--space-md);
+  text-align: center;
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-base);
+}
+
+.pattern-item:hover {
+  border-color: var(--accent-success);
+  background: var(--bg-hover);
+}
+
+.weight-large {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--accent-success);
+  margin-bottom: var(--space-sm);
+}
+
+.pattern-breakdown {
+  text-align: left;
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+}
+
+.pattern-breakdown div {
+  margin-bottom: var(--space-xs);
+}
+
+.story-card {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+}
+
+.story-content {
+  background: var(--bg-secondary);
+  padding: var(--space-md);
+  border-radius: 8px;
+  font-size: var(--font-sm);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--accent-purple);
+}
+
+.practice-card {
+  grid-column: 1 / -1;
+}
+
+.practice-buttons {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.memory-practice-btn {
+  flex: 1;
+  min-width: 120px;
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+}
+
+.memory-practice-btn:hover {
+  background: var(--accent-primary);
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.mobile-menu-btn[data-mode="memory"]:hover {
+  border-color: var(--accent-primary);
+  background: rgba(59, 130, 246, 0.1);
+}
+
 /* Feedback Toast System */
 .feedback-toast {
   position: fixed;
@@ -978,6 +1131,28 @@ tr:hover td {
     left: 10px;
     max-width: none;
     text-align: center;
+  }
+
+  .memory-techniques-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .weight-patterns-card,
+  .story-card,
+  .practice-card {
+    grid-column: 1;
+  }
+
+  .patterns-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-buttons {
+    flex-direction: column;
+  }
+
+  .memory-practice-btn {
+    flex: none;
   }
 }
 

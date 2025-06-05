@@ -533,7 +533,81 @@ function toggleMobileMenu() {
   );
 }
 
-// Set mode
+// Memory techniques and mnemonics
+const memoryTechniques = {
+  "Structural Limitations": {
+    mnemonics: {
+      "Maximum Takeoff Weight": {
+        "85,098 lbs":
+          "🚀 Think: '85 = Einstein's age when he died, 098 = almost 100!'",
+        "85,517 lbs":
+          "🚀 Think: '85 area code + 517 Michigan area code = takeoff!'",
+      },
+      "Maximum Landing Weight": {
+        "74,957 lbs":
+          "🛬 Think: '74 = Independence year + 957 = almost 1000 - emergency landing!'",
+      },
+      "Maximum Zero Fuel Weight": {
+        "69,467 lbs":
+          "⛽ Think: '69 = summer of love + 467 = Boeing 747 backwards!'",
+      },
+      "Maximum Ramp Weight": {
+        "85,450 lbs":
+          "🛤️ Think: '85 again + 450 = 45 degrees x 10 (perfect ramp angle)!'",
+      },
+    },
+    visualizations: {
+      "Maximum Takeoff Weight":
+        "🚀 Imagine a rocket with '85' painted on the side and '098' passengers aboard",
+      "Maximum Landing Weight":
+        "🛬 Picture landing gear with '74' on left wheel, '957' on right wheel",
+      "Maximum Zero Fuel Weight":
+        "⛽ Visualize empty fuel tanks with '69' and '467' written in big numbers",
+      "Maximum Ramp Weight":
+        "🛤️ See a ramp with '85' steps and '450' written at the top",
+    },
+    stories: {
+      sequence:
+        "📖 Story: In 1985 (85), a pilot took off with 98 passengers (85,098). After burning fuel, he could land with 74,957 pounds. With zero fuel, the plane weighs 69,467. On the ramp, it's 85,450 - just 352 pounds more than takeoff weight difference!",
+    },
+  },
+};
+
+// Weight memorization patterns
+const weightPatterns = {
+  "85,098": {
+    pattern: "85 + 098",
+    memory: "80s decade + almost 100",
+    breakdown: "85,000 + 98",
+    similar: "85,517 (just +419)",
+  },
+  "85,517": {
+    pattern: "85 + 517",
+    memory: "Same 85, plus area code 517",
+    breakdown: "85,000 + 517",
+    similar: "85,098 (just -419)",
+  },
+  "74,957": {
+    pattern: "74 + 957",
+    memory: "1974 + almost 1000",
+    breakdown: "74,000 + 957",
+    difference: "10,141 less than takeoff",
+  },
+  "69,467": {
+    pattern: "69 + 467",
+    memory: "69 summer + 467",
+    breakdown: "69,000 + 467",
+    difference: "5,490 less than landing",
+  },
+  "85,450": {
+    pattern: "85 + 450",
+    memory: "Same 85 + 450 degrees",
+    breakdown: "85,000 + 450",
+    difference: "352 more than takeoff",
+  },
+};
+
+// Add memorization mode
 function setMode(mode) {
   appState.currentMode = mode;
 
@@ -557,10 +631,17 @@ function setMode(mode) {
   const fillControls = document.getElementById("fill-mode-controls");
   if (fillControls) fillControls.remove();
 
-  // Populate table
+  // Clean up memory aids
+  const memoryAids = document.getElementById("memory-aids");
+  if (memoryAids) memoryAids.remove();
+
+  // Populate table or show memory aids
   if (mode === "fill") {
     createFillModeControls();
+  } else if (mode === "memory") {
+    createMemoryAids();
   }
+
   populateTable();
 }
 
@@ -934,6 +1015,168 @@ function showFeedback(type, message) {
       navigator.vibrate([100, 50, 100]); // Pattern for incorrect
     }
   }
+}
+
+// Create memory aids for weight memorization
+function createMemoryAids() {
+  const aids = document.createElement("div");
+  aids.id = "memory-aids";
+  aids.className = "memory-aids-container";
+
+  const categoryData = limitationsCategories[appState.currentCategory];
+  const techniques = memoryTechniques[appState.currentCategory];
+
+  if (!techniques) {
+    aids.innerHTML = `
+      <div class="memory-aid-card">
+        <h3>💡 Memory Tips</h3>
+        <p>Break down numbers into chunks, find patterns, and create mental stories!</p>
+      </div>
+    `;
+  } else {
+    let aidsHTML = `
+      <div class="memory-techniques-grid">
+        <div class="memory-aid-card">
+          <h3>🧠 Mnemonics</h3>
+          <div class="technique-list">
+    `;
+
+    if (techniques.mnemonics) {
+      categoryData.data.forEach((item) => {
+        Object.keys(item).forEach((key) => {
+          if (
+            key !== "structure" &&
+            key !== "choices" &&
+            techniques.mnemonics[item.structure] &&
+            techniques.mnemonics[item.structure][item[key]]
+          ) {
+            aidsHTML += `
+              <div class="technique-item">
+                <strong>${item.structure} (${key.toUpperCase()}):</strong><br>
+                <span class="weight-highlight">${item[key]}</span><br>
+                <span class="mnemonic">${
+                  techniques.mnemonics[item.structure][item[key]]
+                }</span>
+              </div>
+            `;
+          }
+        });
+      });
+    }
+
+    aidsHTML += `
+          </div>
+        </div>
+        
+        <div class="memory-aid-card">
+          <h3>🎨 Visualizations</h3>
+          <div class="technique-list">
+    `;
+
+    if (techniques.visualizations) {
+      Object.keys(techniques.visualizations).forEach((limitation) => {
+        aidsHTML += `
+          <div class="technique-item">
+            <strong>${limitation}:</strong><br>
+            <span class="visualization">${techniques.visualizations[limitation]}</span>
+          </div>
+        `;
+      });
+    }
+
+    aidsHTML += `
+          </div>
+        </div>
+        
+        <div class="memory-aid-card weight-patterns-card">
+          <h3>🔢 Weight Patterns</h3>
+          <div class="patterns-grid">
+    `;
+
+    categoryData.data.forEach((item) => {
+      Object.keys(item).forEach((key) => {
+        if (
+          key !== "structure" &&
+          key !== "choices" &&
+          weightPatterns[item[key]]
+        ) {
+          const pattern = weightPatterns[item[key]];
+          aidsHTML += `
+            <div class="pattern-item">
+              <div class="weight-large">${item[key]}</div>
+              <div class="pattern-breakdown">
+                <div>📐 Pattern: ${pattern.pattern}</div>
+                <div>🧠 Memory: ${pattern.memory}</div>
+                <div>➗ Breakdown: ${pattern.breakdown}</div>
+                ${
+                  pattern.similar
+                    ? `<div>🔗 Similar: ${pattern.similar}</div>`
+                    : ""
+                }
+                ${
+                  pattern.difference
+                    ? `<div>📊 Difference: ${pattern.difference}</div>`
+                    : ""
+                }
+              </div>
+            </div>
+          `;
+        }
+      });
+    });
+
+    aidsHTML += `
+          </div>
+        </div>
+        
+        <div class="memory-aid-card story-card">
+          <h3>📚 Memory Story</h3>
+          <div class="story-content">
+            ${
+              techniques.stories
+                ? techniques.stories.sequence
+                : "Create your own story connecting all the weights!"
+            }
+          </div>
+        </div>
+        
+        <div class="memory-aid-card practice-card">
+          <h3>🎯 Practice Techniques</h3>
+          <div class="practice-buttons">
+            <button class="btn memory-practice-btn" onclick="startFlashcards()">🔄 Flashcards</button>
+            <button class="btn memory-practice-btn" onclick="startSpeedDrill()">⚡ Speed Drill</button>
+            <button class="btn memory-practice-btn" onclick="startProgressive()">📈 Progressive</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const statsContainer = document.querySelector(".stats-container");
+  statsContainer.insertAdjacentElement("afterend", aids);
+}
+
+// Flashcard practice mode
+function startFlashcards() {
+  showFeedback("correct", "🔄 Flashcard mode starting!");
+  // Switch to quiz mode but with single questions
+  setMode("quiz");
+  // Could add flashcard-specific logic here
+}
+
+// Speed drill practice
+function startSpeedDrill() {
+  showFeedback("correct", "⚡ Speed drill activated!");
+  setMode("timer");
+  // Reduce timer to 3 minutes for intensive practice
+  appState.timeRemaining = 180;
+}
+
+// Progressive difficulty
+function startProgressive() {
+  showFeedback("correct", "📈 Progressive mode - start with easiest!");
+  setMode("fill");
+  // Could implement progressive difficulty logic
 }
 
 // Show streak celebrations
